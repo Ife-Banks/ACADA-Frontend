@@ -1,26 +1,418 @@
 @import "tailwindcss";
 
+/* ─── ACADA Brand Design Tokens ─────────────────────────────── */
 :root {
+  /* Core palette */
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #0f172a;
+
+  /* ACADA brand */
+  --brand-primary: #1a56db;
+  --brand-secondary: #7e3af2;
+  --brand-primary-hover: #1648c0;
+  --brand-secondary-hover: #6d28d9;
+
+  /* Surface / card */
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+
+  /* Muted / subtle backgrounds */
+  --muted: #f0f4f8;
+  --muted-foreground: #64748b;
+
+  /* Borders */
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #1a56db;
+
+  /* Status colors */
+  --success: #16a34a;
+  --success-bg: #f0fdf4;
+  --warning: #d97706;
+  --warning-bg: #fffbeb;
+  --destructive: #dc2626;
+  --destructive-bg: #fef2f2;
+  --info: #0284c7;
+  --info-bg: #f0f9ff;
+
+  /* Sidebar */
+  --sidebar-bg: #0f172a;
+  --sidebar-fg: #cbd5e1;
+  --sidebar-active-bg: #1a56db;
+  --sidebar-active-fg: #ffffff;
+  --sidebar-hover-bg: #1e293b;
+
+  /* Radius */
+  --radius: 0.5rem;
+
+  /* ── Neumorphic shadows (light mode) ──────────────────────────
+     Classic neumorphism: two shadows — a light source top-left
+     casting a bright highlight, and a darker shadow bottom-right.
+     We define multiple intensities so different elements can feel
+     raised or pressed at different depths.
+  */
+  --nm-bg:          #f0f4f8;   /* neumorphic surface bg — slightly off-white */
+  --nm-shadow-dark: #c8d0da;   /* bottom-right shadow */
+  --nm-shadow-light:#ffffff;   /* top-left highlight */
+
+  /* Raised — default resting state */
+  --nm-raised:
+    6px 6px 14px var(--nm-shadow-dark),
+   -6px -6px 14px var(--nm-shadow-light);
+
+  /* Raised large — hero cards / feature cards */
+  --nm-raised-lg:
+    10px 10px 24px var(--nm-shadow-dark),
+   -10px -10px 24px var(--nm-shadow-light);
+
+  /* Pressed — active / clicked state */
+  --nm-pressed:
+    inset 4px 4px 10px var(--nm-shadow-dark),
+    inset -4px -4px 10px var(--nm-shadow-light);
+
+  /* Inset subtle — inside panel sections */
+  --nm-inset:
+    inset 2px 2px 6px var(--nm-shadow-dark),
+    inset -2px -2px 6px var(--nm-shadow-light);
+
+  /* Floating — elevated panels with blur glow */
+  --nm-float:
+    0 8px 32px rgba(26, 86, 219, 0.10),
+    8px 8px 20px var(--nm-shadow-dark),
+   -8px -8px 20px var(--nm-shadow-light);
 }
 
+/* ─── Tailwind v4 theme mapping ──────────────────────────────── */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-secondary: var(--brand-secondary);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-destructive: var(--destructive);
+  --color-sidebar-bg: var(--sidebar-bg);
+  --color-sidebar-fg: var(--sidebar-fg);
+  --color-sidebar-active-bg: var(--sidebar-active-bg);
+  --color-sidebar-hover-bg: var(--sidebar-hover-bg);
+  --color-nm-bg: var(--nm-bg);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 6px);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  /* ── Keyframe animations ──────────────────────────────────────
+     Defined inside @theme inline so Tailwind's JIT picks them up
+     and they're available as animate-* utilities.
+  */
+
+  /* Fade up — used for hero text and section headings */
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(28px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
+  --animate-fade-up: fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  /* Fade in — simple opacity reveal */
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  --animate-fade-in: fade-in 0.6s ease both;
+
+  /* Scale in — for the badge pill and stat numbers */
+  @keyframes scale-in {
+    from { opacity: 0; transform: scale(0.88); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  --animate-scale-in: scale-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+
+  /* Float — for the decorative orbs in the hero */
+  @keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    33%       { transform: translateY(-18px) rotate(2deg); }
+    66%       { transform: translateY(-8px) rotate(-1deg); }
+  }
+  --animate-float: float 7s ease-in-out infinite;
+
+  /* Float slow — second orb out of phase */
+  @keyframes float-slow {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    40%       { transform: translateY(-24px) rotate(-2deg); }
+    70%       { transform: translateY(-10px) rotate(1deg); }
+  }
+  --animate-float-slow: float-slow 9s ease-in-out infinite;
+
+  /* Shimmer — icon background pulse */
+  @keyframes shimmer {
+    0%   { background-position: -200% center; }
+    100% { background-position:  200% center; }
+  }
+  --animate-shimmer: shimmer 2.8s linear infinite;
+
+  /* Pulse ring — brand badge dot */
+  @keyframes pulse-ring {
+    0%   { box-shadow: 0 0 0 0 rgba(26, 86, 219, 0.4); }
+    70%  { box-shadow: 0 0 0 8px rgba(26, 86, 219, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(26, 86, 219, 0); }
+  }
+  --animate-pulse-ring: pulse-ring 2s ease-out infinite;
+
+  /* Slide in from left — step connector */
+  @keyframes slide-right {
+    from { transform: scaleX(0); transform-origin: left; }
+    to   { transform: scaleX(1); transform-origin: left; }
+  }
+  --animate-slide-right: slide-right 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.6s both;
+
+  /* Fade in from the left — split-panel brand side */
+  @keyframes fade-left {
+    from { opacity: 0; transform: translateX(-32px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  --animate-fade-left: fade-left 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  /* Fade in from the right — form side of the auth split */
+  @keyframes fade-right {
+    from { opacity: 0; transform: translateX(32px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  --animate-fade-right: fade-right 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  /* Pop in — success icons and confirmation marks */
+  @keyframes pop-in {
+    0%   { opacity: 0; transform: scale(0.5); }
+    60%  { transform: scale(1.08); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  --animate-pop-in: pop-in 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+
+  /* Soft pulse — live indicator dots and submit glow */
+  @keyframes pulse-soft {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.55; }
+  }
+  --animate-pulse-soft: pulse-soft 2.4s ease-in-out infinite;
+
+  /* Gradient shift — slowly pans the brand panel background */
+  @keyframes gradient-shift {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  --animate-gradient-shift: gradient-shift 14s ease-in-out infinite;
+
+  /* Shake — invalid submit feedback */
+  @keyframes shake-x {
+    0%, 100% { transform: translateX(0); }
+    20%      { transform: translateX(-6px); }
+    40%      { transform: translateX(6px); }
+    60%      { transform: translateX(-4px); }
+    80%      { transform: translateX(4px); }
+  }
+  --animate-shake-x: shake-x 0.4s ease both;
 }
 
+/* ─── Base styles ─────────────────────────────────────────────── */
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Thin scrollbar for dashboard tables */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--muted); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+/* ─── Neumorphic utility classes ─────────────────────────────── */
+
+/* Surface — the base neumorphic background */
+.nm-surface {
+  background: var(--nm-bg);
+}
+
+/* Raised card */
+.nm-raised {
+  background: var(--nm-bg);
+  box-shadow: var(--nm-raised);
+  transition: box-shadow 0.35s ease, transform 0.35s ease;
+}
+.nm-raised:hover {
+  box-shadow: var(--nm-float);
+  transform: translateY(-3px);
+}
+
+/* Raised large */
+.nm-raised-lg {
+  background: var(--nm-bg);
+  box-shadow: var(--nm-raised-lg);
+  transition: box-shadow 0.35s ease, transform 0.35s ease;
+}
+.nm-raised-lg:hover {
+  box-shadow: var(--nm-float);
+  transform: translateY(-4px);
+}
+
+/* Pressed / inset */
+.nm-pressed {
+  background: var(--nm-bg);
+  box-shadow: var(--nm-pressed);
+}
+
+/* Inset panel */
+.nm-inset {
+  background: var(--nm-bg);
+  box-shadow: var(--nm-inset);
+}
+
+/* Floating elevated */
+.nm-float {
+  background: var(--nm-bg);
+  box-shadow: var(--nm-float);
+}
+
+/* Step number circle — raised with brand glow on hover */
+.nm-step-circle {
+  background: var(--nm-bg);
+  box-shadow: var(--nm-raised);
+  transition: box-shadow 0.35s ease, background 0.35s ease;
+}
+.nm-step-circle:hover,
+.group:hover .nm-step-circle {
+  background: var(--brand-primary);
+  box-shadow: 0 0 0 4px rgba(26,86,219,0.18), var(--nm-raised);
+}
+
+/* Role item — raised with active left-border accent on hover */
+.nm-role-item {
+  background: var(--nm-bg);
+  box-shadow: var(--nm-raised);
+  border-left: 3px solid transparent;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+}
+.nm-role-item:hover {
+  box-shadow: var(--nm-float);
+  border-left-color: var(--brand-primary);
+  transform: translateX(4px);
+}
+
+/* Shimmer icon background */
+.nm-icon-shimmer {
+  background: linear-gradient(
+    110deg,
+    rgba(26,86,219,0.08) 0%,
+    rgba(26,86,219,0.18) 40%,
+    rgba(26,86,219,0.08) 60%
+  );
+  background-size: 200% 100%;
+  animation: var(--animate-shimmer);
+}
+
+/* CTA button — raised neumorphic */
+.nm-btn-primary {
+  box-shadow:
+    4px 4px 10px rgba(15,23,42,0.25),
+   -2px -2px 8px rgba(255,255,255,0.15);
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+.nm-btn-primary:hover {
+  box-shadow:
+    6px 6px 16px rgba(15,23,42,0.3),
+   -2px -2px 8px rgba(255,255,255,0.2);
+  transform: translateY(-2px);
+}
+.nm-btn-primary:active {
+  box-shadow:
+    inset 3px 3px 8px rgba(15,23,42,0.25),
+    inset -2px -2px 6px rgba(255,255,255,0.1);
+  transform: translateY(0);
+}
+
+/* Ghost button — raised neumorphic on muted bg */
+.nm-btn-ghost {
+  background: var(--nm-bg);
+  box-shadow: var(--nm-raised);
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+.nm-btn-ghost:hover {
+  box-shadow: var(--nm-float);
+  transform: translateY(-2px);
+}
+.nm-btn-ghost:active {
+  box-shadow: var(--nm-pressed);
+  transform: translateY(0);
+}
+
+/* ─── Animation delay helpers (used inline via style prop) ───── */
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-500 { animation-delay: 500ms; }
+.delay-600 { animation-delay: 600ms; }
+.delay-700 { animation-delay: 700ms; }
+.delay-800 { animation-delay: 800ms; }
+
+/* ─── Subtle grid pattern — brand panel backdrop ──────────────── */
+.nm-grid-pattern {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px);
+  background-size: 34px 34px;
+}
+
+/* ─── Interactive secondary button (neumorphic ghost) ─────────── */
+.nm-btn-secondary {
+  background: var(--nm-bg);
+  box-shadow: var(--nm-raised);
+  transition: box-shadow 0.25s ease, transform 0.25s ease, background 0.25s ease;
+}
+.nm-btn-secondary:hover {
+  box-shadow: var(--nm-float);
+  transform: translateY(-2px);
+}
+.nm-btn-secondary:active {
+  box-shadow: var(--nm-pressed);
+  transform: translateY(0);
+}
+
+/* ─── Neumorphic chip / tag ───────────────────────────────────── */
+.nm-chip {
+  background: var(--nm-bg);
+  box-shadow: var(--nm-inset);
+}
+
+/* ─── Error shake target — applied to cards on failed submit ──── */
+.nm-shake { animation: var(--animate-shake-x); }
+
+/* ─── Empty state dot with live pulse ─────────────────────────── */
+.nm-live-dot {
+  animation: var(--animate-pulse-soft);
+}
+
+/* ─── Accessibility: respect reduced motion ─────────────────────
+   Everyone who prefers reduced motion gets instant, non-animated
+   transitions. This keeps the neumorphic look while removing the
+   movement.
+─────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
