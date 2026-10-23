@@ -42,11 +42,10 @@ export function PasswordInput({
       rightSlot={
         <button
           type="button"
-          tabIndex={-1}
           onClick={() => setVisible((v) => !v)}
           aria-label={visible ? "Hide password" : "Show password"}
           aria-pressed={visible}
-          className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
+          className="auth-password-toggle shrink-0 transition-colors"
         >
           {visible ? (
             <EyeOff className="w-4 h-4" />

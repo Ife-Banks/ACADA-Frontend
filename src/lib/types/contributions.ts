@@ -37,6 +37,8 @@ export interface ContributionCycle {
   period_display: string;
   status: CycleStatus;
   generated_by: string | null;
+  /** Display name of the officer who generated the cycle (null if unknown). */
+  generated_by_name: string | null;
   generated_at: string | null;
   closed_at: string | null;
   notes: string;
@@ -58,6 +60,8 @@ export interface ContributionEntry {
   source_reference: string;
   status: EntryStatus;
   confirmed_by: string | null;
+  /** Display name of the officer who confirmed the entry (null if unknown). */
+  confirmed_by_name: string | null;
   confirmed_at: string | null;
   created_at: string;
 }
@@ -72,6 +76,8 @@ export interface PenaltyEntry {
   reason: string;
   status: PenaltyStatus;
   waived_by: string | null;
+  /** Display name of the officer who waived the penalty (null if unknown). */
+  waived_by_name: string | null;
   waived_reason: string;
   created_at: string;
 }

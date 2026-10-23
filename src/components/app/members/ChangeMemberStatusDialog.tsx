@@ -123,7 +123,11 @@ export function ChangeMemberStatusDialog({ open, onClose, member }: Props) {
 
   const { mutate, isPending } = useMutation({
     mutationFn: () =>
-      updateMemberStatus(member!.id, selectedAction!.targetStatus),
+      updateMemberStatus(
+        member!.id,
+        selectedAction!.targetStatus,
+        selectedAction!.requiresReason ? reason.trim() : undefined
+      ),
     onSuccess: () => {
       toast.success(
         `${member!.user.full_name}'s status updated to ${selectedAction!.targetStatus}.`,

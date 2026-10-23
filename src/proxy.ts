@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ROLE_HOME, canRoleAccessPath } from "@/lib/roles";
 
 /**
  * Route protection middleware.
@@ -8,44 +9,35 @@ import { NextRequest, NextResponse } from "next/server";
  * Redirects users to the correct portal based on their role.
  *
  * Role → portal mapping:
- *   SUPER_ADMIN   → /platform/stats
- *   SOCIETY_ADMIN → /admin/members  (also has access to /executive/*)
- *   EXECUTIVE     → /executive/dashboard
+ *   SUPER_ADMIN      → /platform/stats
+ *   SOCIETY_ADMIN    → /admin/members  (also has access to /executive/* and /member/*)
+ *   EXECUTIVE        → /executive/dashboard
  *   COMMITTEE_MEMBER → /executive/dashboard (read-only, enforced server-side)
- *   MEMBER        → /member/dashboard
+ *   MEMBER           → /member/dashboard
+ *
+ * The route sets live in `src/lib/roles.ts`, shared with the UI, so the
+ * navigation and the middleware can never disagree.
+ *
+ * This is a navigation aid, not a security boundary. The `role` cookie is
+ * readable by JavaScript, so the real boundary is the API — every endpoint
+ * re-checks the caller's role and permission server-side.
  */
 
 const PUBLIC_PATHS = ["/", "/login", "/register"];
 
-const ROLE_HOME: Record<string, string> = {
-  SUPER_ADMIN:      "/platform/stats",
-  SOCIETY_ADMIN:    "/admin/members",
-  EXECUTIVE:        "/executive/dashboard",
-  COMMITTEE_MEMBER: "/executive/dashboard",
-  MEMBER:           "/member/dashboard",
-};
-
-// Which path prefixes each role is allowed into
-const ROLE_ALLOWED_PREFIXES: Record<string, string[]> = {
-  SUPER_ADMIN:      ["/platform"],
-  SOCIETY_ADMIN:    ["/admin", "/executive", "/member"],
-  EXECUTIVE:        ["/executive", "/member"],
-  COMMITTEE_MEMBER: ["/executive", "/member"],
-  MEMBER:           ["/member"],
-};
-
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Always allow public paths
-  if (PUBLIC_PATHS.includes(pathname)) {
+  // Always allow public paths (with or without a trailing slash).
+  const normalised = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
+  if (PUBLIC_PATHS.includes(normalised)) {
     return NextResponse.next();
   }
 
   const token = request.cookies.get("access_token")?.value;
   const role = request.cookies.get("role")?.value;
 
-  // Not authenticated → send to login
+  // Not authenticated → send to login, remembering where they were going.
   if (!token) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("next", pathname);
@@ -58,12 +50,7 @@ export function proxy(request: NextRequest) {
   }
 
   // Check the user is allowed into the requested path prefix
-  const allowedPrefixes = ROLE_ALLOWED_PREFIXES[role] ?? [];
-  const isAllowed = allowedPrefixes.some((prefix) =>
-    pathname.startsWith(prefix)
-  );
-
-  if (!isAllowed) {
+  if (!canRoleAccessPath(role, pathname)) {
     // Redirect to their home instead of a 403
     const home = ROLE_HOME[role] ?? "/login";
     return NextResponse.redirect(new URL(home, request.url));
@@ -80,6 +67,6 @@ export const config = {
      * - favicon.ico, public files
      * - api routes
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

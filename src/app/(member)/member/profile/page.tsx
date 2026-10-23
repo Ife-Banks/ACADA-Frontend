@@ -6,12 +6,13 @@ export const metadata: Metadata = { title: "My Profile" };
 
 export default function MemberProfilePage() {
   return (
-    <div className="flex flex-col gap-6">
-      <header>
-        <h1 className="text-2xl font-semibold text-foreground mb-1">My Profile</h1>
-        <p className="text-muted-foreground text-sm">
-          Your personal details, cooperative memberships, and account security.
-        </p>
+    <div className="member-page member-profile-page">
+      <header className="member-page-heading">
+        <div>
+          <p className="member-page-eyebrow">Account</p>
+          <h1>My profile</h1>
+          <p>Your personal details, cooperative memberships, and account security.</p>
+        </div>
       </header>
 
       <ProfileSummary />

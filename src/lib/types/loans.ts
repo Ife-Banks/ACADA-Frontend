@@ -17,6 +17,33 @@ export type LoanStatus = "active" | "repaying" | "closed" | "defaulted";
 export type GuarantorStatus = "pending" | "confirmed" | "declined";
 export type RepaymentStatus = "scheduled" | "paid" | "partial" | "overdue" | "waived";
 
+/**
+ * The basis a loan's interest is charged on.
+ *
+ * `flat` — simple interest on the original principal for the whole term;
+ * every instalment is identical.
+ * `reducing` — interest on the falling balance (amortised); instalments are
+ * level in total but the interest inside each one shrinks over time.
+ */
+export type InterestMethod = "flat" | "reducing";
+
+export const INTEREST_METHODS: {
+  value: InterestMethod;
+  label: string;
+  hint: string;
+}[] = [
+  {
+    value: "flat",
+    label: "Flat (simple) interest",
+    hint: "Interest is charged on the original amount for the whole term. Every instalment is the same.",
+  },
+  {
+    value: "reducing",
+    label: "Reducing balance (amortised)",
+    hint: "Interest is charged on what is still owed, so it falls as you repay. Instalments stay level.",
+  },
+];
+
 export interface LoanProduct {
   id: string;
   name: string;
@@ -27,6 +54,7 @@ export interface LoanProduct {
   max_amount: string;
   max_multiplier: string;
   interest_rate: string;
+  interest_method: InterestMethod;
   max_term_months: number;
   min_term_months: number;
   auto_approval_threshold: string;
@@ -67,9 +95,38 @@ export interface RuleEvaluation {
   eligible: boolean;
   max_borrowable: string;
   approval_mode: "auto" | "manual";
+  /** Amount above which executive approval is required (null if not resolved). */
+  approval_threshold: string | null;
   message: string;
   blocked_on_guarantors: boolean;
   rules: RuleResult[];
+  /** Present when the check was made with both an amount and a term. */
+  quote?: RepaymentQuote;
+}
+
+/** One instalment of a priced loan */
+export interface QuoteInstallment {
+  installment_no: number;
+  principal_component: string;
+  interest_component: string;
+  amount_due: string;
+}
+
+/**
+ * What a loan will actually cost — the same calculation the backend uses
+ * to write the contract, so the figure a member sees before applying is the
+ * figure they will be charged.
+ */
+export interface RepaymentQuote {
+  principal: string;
+  annual_rate: string;
+  term_months: number;
+  interest_method: InterestMethod;
+  interest_method_label: string;
+  total_interest: string;
+  total_repayable: string;
+  monthly_installment: string;
+  schedule: QuoteInstallment[];
 }
 
 export interface LoanApplicationSummary {
@@ -103,6 +160,28 @@ export interface LoanApplicationDetail {
   created_at: string;
 }
 
+/**
+ * Restricted view of a loan application as seen by a named guarantor.
+ *
+ * The backend deliberately withholds the applicant's contact details, the
+ * other guarantors, the rule evaluation and the approval trail from
+ * guarantors — they only need enough to decide.
+ */
+export interface GuaranteeRequest {
+  id: string;
+  member_name: string;
+  product: LoanProduct;
+  product_name: string;
+  amount_requested: string;
+  purpose: string;
+  term_months: number;
+  status: LoanApplicationStatus;
+  submitted_at: string | null;
+  guarantor_status: GuarantorStatus | null;
+  guarantor_id: string | null;
+  created_at: string;
+}
+
 export interface RepaymentScheduleItem {
   id: string;
   installment_no: number;
@@ -122,6 +201,7 @@ export interface ActiveLoan {
   principal_amount: string;
   approved_amount: string;
   interest_rate: string;
+  interest_method: InterestMethod;
   term_months: number;
   total_repayable: string;
   monthly_installment: string;
@@ -137,6 +217,13 @@ export interface ActiveLoan {
 export interface EligibilityCheckPayload {
   loan_product_id: string;
   amount?: string;
+  term_months?: number;
+}
+
+export interface LoanQuotePayload {
+  loan_product_id: string;
+  amount: string;
+  term_months: number;
 }
 
 export interface LoanApplicationPayload {

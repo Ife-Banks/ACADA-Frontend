@@ -52,6 +52,36 @@ export interface Member {
   created_at: string;
 }
 
+/**
+ * The thin roster a plain member receives from `GET /members/`.
+ *
+ * The same endpoint returns the full `Member` record — profile, employee and
+ * payroll numbers — only to the roles that manage members. Everyone else
+ * gets this shape, so a member sees who is in their society without seeing
+ * anybody else's institutional details.
+ */
+export interface MemberDirectory {
+  id: string;
+  user: MemberUser;
+  role: MemberRole;
+  membership_status: MembershipStatus;
+  created_at: string;
+}
+
+/**
+ * A member who can be named as a guarantor.
+ *
+ * Deliberately narrow — the loan application form only needs enough to
+ * show and identify a person, so the roster's institutional details are
+ * not part of it.
+ */
+export interface GuarantorCandidate {
+  id: string;
+  full_name: string;
+  email: string;
+  profile_id: string | null;
+}
+
 export interface CreateMemberPayload {
   email: string;
   first_name: string;

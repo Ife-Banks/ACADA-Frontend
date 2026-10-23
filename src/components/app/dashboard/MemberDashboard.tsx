@@ -133,16 +133,17 @@ export function MemberDashboard() {
   const unread = notifications.filter((n) => !n.is_read).length;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="member-page member-dashboard-page flex flex-col gap-5">
       {/* Greeting */}
-      <div>
-        <h1 className="text-2xl font-semibold text-foreground mb-1">
-          {greeting}{firstName ? `, ${firstName}` : ""} 👋
-        </h1>
-        <p className="text-muted-foreground text-sm">
-          {new Date().toLocaleDateString("en-NG", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
-        </p>
-      </div>
+      <header className="member-page-heading">
+        <div>
+          <p className="member-page-eyebrow">Your cooperative</p>
+          <h1>{greeting}{firstName ? `, ${firstName}` : ""} 👋</h1>
+          <p>
+            {new Date().toLocaleDateString("en-NG", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+          </p>
+        </div>
+      </header>
 
       {/* Hero + quick actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -231,7 +232,7 @@ export function MemberDashboard() {
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="member-dashboard-kpis grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatTile label="Current balance" value={balance ? money(balance.current_balance) : "—"} index={0} />
         <StatTile label="Total received" value={balance ? money(balance.total_received) : "—"} index={1} />
         <StatTile

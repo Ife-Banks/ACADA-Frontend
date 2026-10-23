@@ -38,13 +38,42 @@ export class ApiError extends Error {
     return this.status === 400;
   }
 
-  /** Flat list of all error messages for display in a toast */
+  /**
+   * Flat list of all error messages for display in a toast.
+   *
+   * The API nests field-level problems under `errors`, e.g.
+   *   { error: "Validation Error", detail: "Validation failed",
+   *     errors: { tenant_code: ["You are not a member of …"] } }
+   * so those specific messages are unwrapped and returned first — the
+   * generic "Validation Error" headline is no use to a person staring at a
+   * form. When there are no field errors, `detail` is preferred over the
+   * error type, for the same reason.
+   */
   get messages(): string[] {
+    const body = this.body ?? {};
     const msgs: string[] = [];
-    for (const [key, val] of Object.entries(this.body)) {
-      if (Array.isArray(val)) msgs.push(...val.map(String));
-      else if (typeof val === "string") msgs.push(val);
+
+    const collect = (value: unknown): void => {
+      if (Array.isArray(value)) {
+        value.forEach(collect);
+      } else if (typeof value === "string") {
+        msgs.push(value);
+      } else if (value && typeof value === "object") {
+        Object.values(value as Record<string, unknown>).forEach(collect);
+      }
+    };
+
+    if (body.errors) collect(body.errors);
+
+    if (!msgs.length) {
+      if (typeof body.detail === "string") msgs.push(body.detail);
+      for (const [key, val] of Object.entries(body)) {
+        if (key === "errors" || key === "detail") continue;
+        if (Array.isArray(val)) val.forEach(collect);
+        else if (typeof val === "string") msgs.push(val);
+      }
     }
+
     return msgs.length ? msgs : [this.message];
   }
 }
@@ -81,7 +110,7 @@ export function clearTokens() {
 
 let refreshPromise: Promise<string> | null = null;
 
-async function silentRefresh(): Promise<string> {
+export async function silentRefresh(): Promise<string> {
   // Deduplicate — only one refresh at a time across concurrent requests
   if (refreshPromise) return refreshPromise;
 
@@ -179,6 +208,37 @@ export async function apiRequest<T = unknown>(
   }
 
   return data as T;
+}
+
+// ─── Authenticated binary fetch (exports) ─────────────────────────────────────
+
+/**
+ * Fetch a non-JSON endpoint (CSV/XLSX downloads) with the access token.
+ * Unlike `apiRequest`, this returns the raw Response so callers can stream
+ * the body to a Blob. A 401 triggers one silent refresh + retry.
+ */
+export async function fetchWithAuth(
+  path: string,
+  init: RequestInit = {}
+): Promise<Response> {
+  const doFetch = (token?: string) => {
+    const headers = new Headers(init.headers);
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+    return fetch(`${BASE_URL}${path}`, { ...init, headers });
+  };
+
+  let res = await doFetch(getAccessToken());
+
+  if (res.status === 401) {
+    try {
+      const token = await silentRefresh();
+      res = await doFetch(token);
+    } catch {
+      // Fall through and return the original 401 so the caller can surface it.
+    }
+  }
+
+  return res;
 }
 
 // ─── Convenience wrappers ─────────────────────────────────────────────────────

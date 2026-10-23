@@ -5,11 +5,14 @@ export const metadata: Metadata = { title: "Contribution Cycles" };
 
 export default function CyclesPage() {
   return (
-    <div className="flex flex-col gap-2">
-      <h1 className="text-2xl font-semibold text-foreground mb-1">Contribution Cycles</h1>
-      <p className="text-muted-foreground text-sm">
-        Open, manage, and close monthly contribution cycles.
-      </p>
+    <div className="executive-page executive-cycles-route">
+      <header className="executive-page-heading">
+        <div>
+          <p className="executive-page-eyebrow">Contributions</p>
+          <h1>Contribution cycles</h1>
+          <p>Open, manage, and close monthly contribution cycles.</p>
+        </div>
+      </header>
       <CyclesExplorer />
     </div>
   );

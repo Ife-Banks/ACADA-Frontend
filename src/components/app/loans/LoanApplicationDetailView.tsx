@@ -19,6 +19,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/hooks/useAuth";
 import { useLoanApplication } from "@/hooks/useLoans";
 import { ApproveLoanDialog } from "./ApproveLoanDialog";
 import { GuarantorStatusBadge, LoanApplicationStatusBadge } from "./LoanBadges";
@@ -101,6 +102,7 @@ function ApprovalStep({ step }: { step: LoanApprovalStep }) {
 export function LoanApplicationDetailView({ applicationId }: { applicationId: string }) {
   const { data: application, isLoading, isError, error, refetch } =
     useLoanApplication(applicationId);
+  const { isExecutiveOrAbove } = useAuth();
   const [decisionOpen, setDecisionOpen] = useState(false);
   const [tab, setTab] = useState<"overview" | "guarantors" | "trail">("overview");
 
@@ -137,6 +139,7 @@ export function LoanApplicationDetailView({ applicationId }: { applicationId: st
   const passCount = evaluation?.rules.filter((r) => r.passed).length ?? 0;
   const totalCount = evaluation?.rules.length ?? 0;
   const decisionable = DECISIONABLE.includes(application.status);
+  const canDecide = decisionable && isExecutiveOrAbove;
   const accepted = ["approved", "disbursed"].includes(application.status);
 
   const tabs = [
@@ -248,14 +251,21 @@ export function LoanApplicationDetailView({ applicationId }: { applicationId: st
               This application has been processed.
             </p>
           ) : decisionable ? (
-            <button
-              type="button"
-              onClick={() => setDecisionOpen(true)}
-              className="nm-btn-primary flex items-center gap-2 rounded-xl bg-brand-primary text-white text-sm font-semibold px-4 py-2.5 hover:bg-brand-primary-hover transition-colors duration-200"
-            >
-              <Gavel className="w-4 h-4" />
-              Approve or reject
-            </button>
+            canDecide ? (
+              <button
+                type="button"
+                onClick={() => setDecisionOpen(true)}
+                className="nm-btn-primary flex items-center gap-2 rounded-xl bg-brand-primary text-white text-sm font-semibold px-4 py-2.5 hover:bg-brand-primary-hover transition-colors duration-200"
+              >
+                <Gavel className="w-4 h-4" />
+                Approve or reject
+              </button>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Awaiting an executive decision. Committee members can review but
+                not decide applications.
+              </p>
+            )
           ) : (
             <p className="text-xs text-muted-foreground">
               No action needed for this application right now.
@@ -293,7 +303,7 @@ export function LoanApplicationDetailView({ applicationId }: { applicationId: st
             <div className="nm-inset rounded-2xl p-4 grid grid-cols-2 sm:grid-cols-3 gap-3 mb-1">
               {[
                 { label: "Product", value: application.product.name },
-                { label: "Interest", value: `${application.product.interest_rate}%` },
+                { label: "Interest", value: `${application.product.interest_rate}% ${application.product.interest_method === "reducing" ? "reducing balance" : "flat"}` },
                 { label: "Max term", value: `${application.product.max_term_months} months` },
                 { label: "Amount requested", value: money(application.amount_requested) },
                 { label: "Term", value: `${application.term_months} months` },
@@ -402,11 +412,15 @@ export function LoanApplicationDetailView({ applicationId }: { applicationId: st
         </p>
       )}
 
-      <ApproveLoanDialog
-        open={decisionOpen}
-        onClose={() => setDecisionOpen(false)}
-        application={application}
-      />
+      {/* Only mounted for a role that may actually decide the application —
+          a read-only committee member never has a write dialog in the tree. */}
+      {canDecide && (
+        <ApproveLoanDialog
+          open={decisionOpen}
+          onClose={() => setDecisionOpen(false)}
+          application={application}
+        />
+      )}
     </div>
   );
 }

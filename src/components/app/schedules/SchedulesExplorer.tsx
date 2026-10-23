@@ -314,12 +314,13 @@ export function SchedulesExplorer() {
   ).length;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="executive-page executive-schedules-page flex flex-col gap-5">
       {/* Header */}
-      <div className="flex flex-wrap items-end justify-between gap-4">
+      <header className="executive-page-heading">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground mb-1">Deduction Schedules</h1>
-          <p className="text-muted-foreground text-sm">
+          <p className="executive-page-eyebrow">Payroll</p>
+          <h1>Deduction schedules</h1>
+          <p>
             Generate, view, and export bursary deduction schedules.
           </p>
         </div>
@@ -331,7 +332,7 @@ export function SchedulesExplorer() {
           <RefreshCw className="w-4 h-4" />
           Generate schedule
         </button>
-      </div>
+      </header>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

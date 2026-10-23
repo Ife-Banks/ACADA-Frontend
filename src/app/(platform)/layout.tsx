@@ -10,9 +10,11 @@ export default function PlatformLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen bg-muted">
+    <div className="platform-shell">
       <PlatformSidebar />
-      <main className="flex-1 overflow-y-auto p-6 lg:p-8">{children}</main>
+      <main className="platform-main">
+        <div className="platform-content">{children}</div>
+      </main>
     </div>
   );
 }

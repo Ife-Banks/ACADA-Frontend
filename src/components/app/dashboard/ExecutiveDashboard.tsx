@@ -126,26 +126,29 @@ export function ExecutiveDashboard() {
   const pendingMembers = summary?.membership.pending_approvals ?? 0;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="executive-page executive-dashboard-page flex flex-col gap-5">
       {/* Greeting */}
-      <div>
-        <h1 className="text-2xl font-semibold text-foreground mb-1">
-          {greeting}{firstName ? `, ${firstName}` : ""} 👋
-        </h1>
-        <p className="text-muted-foreground text-sm">
-          {new Date().toLocaleDateString("en-NG", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
-        </p>
-      </div>
+      <header className="executive-page-heading">
+        <div>
+          <p className="executive-page-eyebrow">Overview</p>
+          <h1>
+            {greeting}{firstName ? `, ${firstName}` : ""} 👋
+          </h1>
+          <p>
+            {new Date().toLocaleDateString("en-NG", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+          </p>
+        </div>
+      </header>
 
       {/* KPIs */}
       {summaryLoading ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
+        <div className="executive-dashboard-kpis grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <Skeleton key={i} className="h-32 w-full rounded-3xl" />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
+        <div className="executive-dashboard-kpis grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
           <KpiTile
             label="Active members"
             value={String(summary?.membership.active_members ?? 0)}

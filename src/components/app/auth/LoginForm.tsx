@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * LoginForm — standard neumorphic sign-in form.
+ * LoginForm — sign-in form using the shared auth field and surface components.
  *
  * Fields: email, password (show/hide), tenant_code (optional — platform
  * admins leave it blank). Built from the shared auth kit so it stays
@@ -28,7 +28,7 @@ import { PasswordInput } from "./PasswordInput";
 const schema = z.object({
   email: z.string().min(1, "Email is required").email("Enter a valid email address"),
   password: z.string().min(1, "Password is required"),
-tenant_code: z.string().trim().toLowerCase().optional(),
+  tenant_code: z.string().trim().toLowerCase().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -38,14 +38,8 @@ type FormValues = z.infer<typeof schema>;
 function ErrorBanner({ message }: { message: string }) {
   return (
     <div
-      className="flex items-start gap-2.5 rounded-xl px-4 py-3 text-sm text-destructive"
+      className="auth-error flex items-start gap-2.5 rounded-xl px-4 py-3 text-sm text-destructive"
       role="alert"
-      style={{
-        background: "var(--destructive-bg)",
-        boxShadow:
-          "inset 2px 2px 6px rgba(220,38,38,0.08), inset -2px -2px 6px rgba(255,255,255,0.6)",
-        animation: "var(--animate-fade-in)",
-      }}
     >
       <span className="shrink-0 mt-0.5" aria-hidden>
         ⚠
@@ -78,6 +72,8 @@ export function LoginForm() {
     } catch (err) {
       if (err instanceof ApiError) {
         setServerError(err.messages[0] ?? "Sign in failed. Please try again.");
+      } else if (err instanceof Error && err.message) {
+        setServerError(err.message);
       } else {
         setServerError("An unexpected error occurred. Please try again.");
       }
@@ -85,8 +81,8 @@ export function LoginForm() {
   }
 
   return (
-    <AuthCard eyebrow="Member area" title="Welcome back" delay={100}>
-      <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-5">
+    <AuthCard eyebrow="Member access" title="Welcome back" subtitle="Sign in to your cooperative account." delay={100}>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
         {serverError && <ErrorBanner message={serverError} />}
 
         {/* Email */}
@@ -130,19 +126,13 @@ export function LoginForm() {
         </AuthField>
 
         {/* Divider */}
-        <div
-          className="h-px w-full"
-          style={{
-            boxShadow:
-              "0 1px 0 var(--nm-shadow-light), 0 -1px 0 var(--nm-shadow-dark)",
-          }}
-        />
+        <div className="auth-divider" aria-hidden="true" />
 
         {/* Submit */}
         <button
           type="submit"
           disabled={isSubmitting}
-          className="nm-btn-primary w-full flex items-center justify-center gap-2 rounded-xl bg-brand-primary text-white font-semibold text-sm py-3.5 hover:bg-brand-primary-hover transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
+          className="auth-submit w-full flex items-center justify-center gap-2 rounded-xl font-semibold text-sm py-3.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
         >
           {isSubmitting ? (
             <>
@@ -158,7 +148,7 @@ export function LoginForm() {
         </button>
 
         {/* Help line */}
-        <p className="text-[11px] text-muted-foreground text-center flex items-center justify-center gap-1.5">
+        <p className="auth-help text-center flex items-center justify-center gap-1.5">
           <LifeBuoy className="w-3.5 h-3.5" />
           Trouble signing in? Contact your society administrator.
         </p>

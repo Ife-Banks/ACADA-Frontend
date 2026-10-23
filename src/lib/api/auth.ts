@@ -49,14 +49,28 @@ export async function login(payload: LoginPayload): Promise<LoginResponse> {
     expires: 7,
   };
 
-  if (data.role) {
-    Cookies.set("role", data.role, cookieOpts);
+  /**
+   * Platform users authenticate without a tenant, so the backend omits
+   * `role` from the response. Infer SUPER_ADMIN from `is_platform_user`
+   * so the middleware can let them into /platform.
+   */
+  const role: UserRole | undefined =
+    data.role ?? (data.user.is_platform_user ? "SUPER_ADMIN" : undefined);
+
+  if (role) {
+    Cookies.set("role", role, cookieOpts);
+  } else {
+    // Clear a stale role from a previous session.
+    Cookies.remove("role");
   }
   if (data.tenant?.code) {
     Cookies.set("tenant_code", data.tenant.code, cookieOpts);
+  } else {
+    // Platform users have no tenant; don't leave a previous society behind.
+    Cookies.remove("tenant_code");
   }
 
-  return data;
+  return { ...data, role };
 }
 
 /**
@@ -72,6 +86,10 @@ export async function register(payload: RegisterPayload) {
 
 /**
  * Blacklist the refresh token and clear all local cookies.
+ *
+ * Signing out must always succeed locally, so a failed server call (an
+ * already-expired token, a platform account with no tenant) is swallowed —
+ * the cookies are cleared either way.
  */
 export async function logout() {
   const refresh = Cookies.get("refresh_token");
@@ -79,6 +97,8 @@ export async function logout() {
     if (refresh) {
       await api.post("/auth/logout/", { refresh });
     }
+  } catch {
+    /* The local session is cleared below regardless. */
   } finally {
     clearTokens();
   }

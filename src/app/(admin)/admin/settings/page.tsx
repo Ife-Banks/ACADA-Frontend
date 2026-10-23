@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
+import { SocietySettingsView } from "@/components/app/settings/SocietySettingsView";
+import { RoleGate } from "@/components/app/shared/RoleGate";
 
 export const metadata: Metadata = { title: "Society Settings" };
 
 export default function SocietySettingsPage() {
+  /* Society settings are the society admin's. The route prefix already
+     restricts this page; the gate is the second lock. */
   return (
-    <div>
-      <h1 className="text-2xl font-semibold text-foreground mb-1">Society Settings</h1>
-      <p className="text-muted-foreground text-sm">
-        Manage branding, contribution rules, and notification policies.
-      </p>
-    </div>
+    <RoleGate allow={["SOCIETY_ADMIN"]}>
+      <SocietySettingsView />
+    </RoleGate>
   );
 }

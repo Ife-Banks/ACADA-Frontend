@@ -22,9 +22,11 @@ import React, {
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import Cookies from "js-cookie";
-import { login as apiLogin, logout as apiLogout } from "@/lib/api/auth";
+import { login as apiLogin, logout as apiLogout, getMe } from "@/lib/api/auth";
 import { clearTokens } from "@/lib/api/client";
+import { ROLE_HOME, canRoleAccessPath } from "@/lib/roles";
 import type { Session, UserRole } from "@/lib/types";
 import type { LoginPayload } from "@/lib/api/auth";
 
@@ -40,19 +42,13 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 // ─── Role → home route mapping ─────────────────────────────────────────────
-
-const ROLE_HOME: Record<UserRole, string> = {
-  SUPER_ADMIN:      "/platform/stats",
-  SOCIETY_ADMIN:    "/admin/members",
-  EXECUTIVE:        "/executive/dashboard",
-  COMMITTEE_MEMBER: "/executive/dashboard",
-  MEMBER:           "/member/dashboard",
-};
+// (imported from @/lib/roles so the proxy and the UI cannot disagree)
 
 // ─── Provider ──────────────────────────────────────────────────────────────
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -83,6 +79,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     async (payload: LoginPayload) => {
       const data = await apiLogin(payload);
 
+      // Never reuse cached data from a previous user/tenant session.
+      queryClient.clear();
+
       const newSession: Session = {
         access: data.access,
         refresh: data.refresh,
@@ -100,23 +99,100 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setSession(newSession);
 
-      // Redirect to the correct portal for this role
+      // Redirect to the correct portal for this role. A session with no
+      // role is not usable — landing on "/" would look like the login
+      // silently did nothing, so it is reported as an error instead.
+      if (!newSession.role) {
+        Cookies.remove("session_snapshot");
+        setSession(null);
+        clearTokens();
+        throw new Error(
+          "Your account is not linked to a cooperative society yet. Enter your society code, or ask your society administrator to add your membership.",
+        );
+      }
+
+      /*
+       * Deep link. The proxy sends an unauthenticated visitor to the login
+       * page with `?next=` so they come back where they were going. Honour
+       * it, but only when the role may actually open that path — and only
+       * for a same-site path, so `?next=` cannot be used to bounce somebody
+       * off to another site.
+       */
+      const next =
+        typeof window !== "undefined"
+          ? new URLSearchParams(window.location.search).get("next")
+          : null;
       const home =
-        newSession.role ? ROLE_HOME[newSession.role] : "/";
+        next &&
+        next.startsWith("/") &&
+        !next.startsWith("//") &&
+        canRoleAccessPath(newSession.role, next)
+          ? next
+          : ROLE_HOME[newSession.role];
+
       router.push(home);
     },
-    [router]
+    [queryClient, router]
   );
+
+  /**
+   * Keep the session's role in step with the server.
+   *
+   * The `role` cookie is written at login, so an administrator who promotes
+   * somebody would otherwise leave them running as their old role — including
+   * the route gating — until they signed out and back in. `/auth/me/` is the
+   * authoritative answer, so the role is reconciled from it on load.
+   */
+  useEffect(() => {
+    if (!session?.access) return;
+    let cancelled = false;
+
+    const reconcile = async () => {
+      try {
+        const me = await getMe();
+        if (cancelled) return;
+
+        // Find the membership for the society this session is signed into.
+        const tenantId = session.tenant?.id;
+        const membership = me.memberships?.find(
+          (m) => !tenantId || m.tenant_id === tenantId,
+        );
+        const serverRole = membership?.role as UserRole | undefined;
+        if (!serverRole || serverRole === session.role) return;
+
+        const updated: Session = { ...session, role: serverRole };
+        Cookies.set("session_snapshot", JSON.stringify(updated), {
+          sameSite: "strict",
+          secure: process.env.NODE_ENV === "production",
+          expires: 7,
+        });
+        Cookies.set("role", serverRole, {
+          sameSite: "strict",
+          secure: process.env.NODE_ENV === "production",
+          expires: 7,
+        });
+        setSession(updated);
+      } catch {
+        /* The session stays as it is — the API is the real boundary. */
+      }
+    };
+
+    void reconcile();
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.access, session?.role, session?.tenant?.id]);
 
   const logout = useCallback(async () => {
     try {
       await apiLogout();
     } finally {
       Cookies.remove("session_snapshot");
+      queryClient.clear();
       setSession(null);
       router.push("/login");
     }
-  }, [router]);
+  }, [queryClient, router]);
 
   return (
     <AuthContext.Provider value={{ session, isLoading, login, logout }}>

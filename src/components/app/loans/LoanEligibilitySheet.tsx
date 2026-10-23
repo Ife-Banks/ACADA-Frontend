@@ -18,7 +18,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import {
   CheckCircle2,
   XCircle,
@@ -29,9 +29,8 @@ import {
 } from "lucide-react";
 import { NmSheet } from "@/components/app/shared/NmSheet";
 import { NmField, NmSelect, NmInput, NmErrorBanner } from "@/components/app/shared/NmField";
-import { getLoanProducts } from "@/lib/api/loans";
 import { checkEligibility } from "@/lib/api/loans";
-import { qk } from "@/lib/query-keys";
+import { useAllLoanProducts } from "@/hooks/useLoans";
 import type { RuleEvaluation, RuleResult } from "@/lib/types";
 import { ApiError } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
@@ -83,13 +82,10 @@ export function LoanEligibilitySheet({ open, onClose, onApply }: Props) {
   const [result, setResult] = useState<RuleEvaluation | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
 
-  /* Fetch product list */
-  const { data: productsData, isLoading: productsLoading } = useQuery({
-    queryKey: qk.loans.products,
-    queryFn: getLoanProducts,
-    enabled: open,
-  });
-  const products = productsData?.results ?? [];
+  /* Fetch the full product catalogue — a member must be able to compare
+     every product the society offers, not just the first page. */
+  const { data: allProducts, isLoading: productsLoading } = useAllLoanProducts();
+  const products = (allProducts ?? []).filter((p) => p.is_active);
 
   const { register, handleSubmit, watch, formState: { errors } } =
     useForm<FormValues>({ resolver: zodResolver(schema) });

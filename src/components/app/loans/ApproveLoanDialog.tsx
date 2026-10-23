@@ -274,7 +274,7 @@ export function ApproveLoanDialog({ open, onClose, application }: Props) {
         {decision && (
           <NmField
             label={decision === "reject" ? "Rejection reason" : "Comments (optional)"}
-            hint={decision === "reject" ? "The member will be notified with this reason." : undefined}
+            hint={decision === "reject" ? "Saved on the application and shown to the member." : undefined}
           >
             <NmTextarea
               placeholder={

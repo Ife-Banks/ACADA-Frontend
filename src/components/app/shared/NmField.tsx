@@ -3,7 +3,7 @@
 /**
  * NmField — neumorphic form field wrapper.
  *
- * Wraps a label, an inset-shadowed input/select/textarea, and an
+ * Wraps a label, a flat input/select/textarea, and an
  * optional error message. Used by every form across all portals.
  *
  * Usage:
@@ -65,15 +65,10 @@ export const NmInput = React.forwardRef<HTMLInputElement, NmInputProps>(
   ({ icon: Icon, rightSlot, error, className, ...props }, ref) => (
     <div
       className={cn(
-        "flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200 focus-within:ring-2 focus-within:ring-brand-primary/30",
+        "nm-field-control flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200",
+        error && "nm-field-control-error",
         className
       )}
-      style={{
-        boxShadow: error
-          ? "inset 3px 3px 8px rgba(220,38,38,0.12), inset -3px -3px 8px rgba(255,255,255,0.8)"
-          : "inset 3px 3px 8px var(--nm-shadow-dark), inset -3px -3px 8px var(--nm-shadow-light)",
-        background: "var(--nm-bg)",
-      }}
     >
       {Icon && <Icon className="w-4 h-4 text-muted-foreground shrink-0" />}
       <input
@@ -100,15 +95,10 @@ export const NmTextarea = React.forwardRef<
 >(({ error, className, ...props }, ref) => (
   <div
     className={cn(
-      "rounded-xl px-4 py-3 transition-all duration-200 focus-within:ring-2 focus-within:ring-brand-primary/30",
+      "nm-field-control rounded-xl px-4 py-3 transition-all duration-200",
+      error && "nm-field-control-error",
       className
     )}
-    style={{
-      boxShadow: error
-        ? "inset 3px 3px 8px rgba(220,38,38,0.12), inset -3px -3px 8px rgba(255,255,255,0.8)"
-        : "inset 3px 3px 8px var(--nm-shadow-dark), inset -3px -3px 8px var(--nm-shadow-light)",
-      background: "var(--nm-bg)",
-    }}
   >
     <textarea
       ref={ref}
@@ -132,15 +122,10 @@ export const NmSelect = React.forwardRef<HTMLSelectElement, NmSelectProps>(
   ({ icon: Icon, error, className, children, ...props }, ref) => (
     <div
       className={cn(
-        "flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200 focus-within:ring-2 focus-within:ring-brand-primary/30",
+        "nm-field-control flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200",
+        error && "nm-field-control-error",
         className
       )}
-      style={{
-        boxShadow: error
-          ? "inset 3px 3px 8px rgba(220,38,38,0.12), inset -3px -3px 8px rgba(255,255,255,0.8)"
-          : "inset 3px 3px 8px var(--nm-shadow-dark), inset -3px -3px 8px var(--nm-shadow-light)",
-        background: "var(--nm-bg)",
-      }}
     >
       {Icon && <Icon className="w-4 h-4 text-muted-foreground shrink-0" />}
       <select

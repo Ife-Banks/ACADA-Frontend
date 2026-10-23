@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * AuthCard — the standard neumorphic card used by every auth form.
+ * AuthCard — the shared, bordered surface used by auth forms.
  *
  * Raised surface with a staggered fade-up entrance animation. Optionally
  * renders an eyebrow badge, a title, and a subtitle header above the
@@ -31,27 +31,19 @@ export function AuthCard({
 }: AuthCardProps) {
   return (
     <div
-      className={cn("nm-raised-lg rounded-3xl p-6 sm:p-8", className)}
-      style={{ animation: "var(--animate-fade-up)", animationDelay: `${delay}ms` }}
+      className={cn("auth-card auth-card-enter", className)}
+      style={{ animationDelay: `${delay}ms` }}
     >
       {(eyebrow ?? title) && (
-        <header className="mb-6">
+        <header className="auth-card-header">
           {eyebrow && (
-            <div
-              className="inline-flex items-center gap-1.5 nm-chip rounded-full px-3 py-1 mb-3"
-              style={{ animation: "var(--animate-fade-in)", animationDelay: "120ms" }}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-brand-primary nm-live-dot" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-brand-primary">
-                {eyebrow}
-              </span>
-            </div>
+            <p className="auth-card-eyebrow"><span />{eyebrow}</p>
           )}
           {title && (
-            <h2 className="text-xl font-bold text-foreground">{title}</h2>
+            <h2 className="auth-card-title">{title}</h2>
           )}
           {subtitle && (
-            <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+            <p className="auth-card-subtitle">
               {subtitle}
             </p>
           )}

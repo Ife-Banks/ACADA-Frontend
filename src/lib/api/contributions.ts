@@ -16,12 +16,42 @@ import type {
 
 // ─── Plans ────────────────────────────────────────────────────────────────────
 
-export async function getPlans() {
-  return api.get<PaginatedResponse<ContributionPlan>>("/contributions/plans/");
+export async function getPlans(params?: PaginationParams) {
+  return api.get<PaginatedResponse<ContributionPlan>>(
+    "/contributions/plans/",
+    params
+  );
+}
+
+/**
+ * Fetch every contribution plan across pages. Needed when clearing competing
+ * defaults, otherwise a default on page 2 would survive.
+ */
+export async function getAllPlans(pageSize = 100, maxPages = 20) {
+  const all: ContributionPlan[] = [];
+
+  for (let page = 1; page <= maxPages; page += 1) {
+    const res = await getPlans({ page, page_size: pageSize });
+    all.push(...res.results);
+    if (!res.next) break;
+  }
+
+  return all;
 }
 
 export async function createPlan(payload: Partial<ContributionPlan>) {
   return api.post<ContributionPlan>("/contributions/plans/", payload);
+}
+
+export async function getPlan(id: string) {
+  return api.get<ContributionPlan>(`/contributions/plans/${id}/`);
+}
+
+export async function updatePlan(
+  id: string,
+  payload: Partial<ContributionPlan>
+) {
+  return api.patch<ContributionPlan>(`/contributions/plans/${id}/`, payload);
 }
 
 // ─── Cycles ───────────────────────────────────────────────────────────────────

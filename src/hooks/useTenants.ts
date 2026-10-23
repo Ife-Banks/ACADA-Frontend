@@ -10,6 +10,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import {
+  getAllTenants,
   getTenants,
   getTenant,
   getTenantSettings,
@@ -22,8 +23,18 @@ const SIXTY_SEC = 60_000;
 export function useTenants(page = 1, pageSize = 25) {
   return useQuery({
     queryKey: qk.tenants.all(page, pageSize),
-    queryFn: () => getTenants(),
+    queryFn: () => getTenants({ page, page_size: pageSize }),
     placeholderData: (prev) => prev,
+    staleTime: SIXTY_SEC,
+    refetchOnWindowFocus: true,
+  });
+}
+
+/** Every tenant, for client-side sorting such as "newest societies". */
+export function useAllTenants() {
+  return useQuery({
+    queryKey: qk.tenants.every,
+    queryFn: () => getAllTenants(),
     staleTime: SIXTY_SEC,
     refetchOnWindowFocus: true,
   });

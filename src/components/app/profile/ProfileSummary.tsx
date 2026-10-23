@@ -139,7 +139,15 @@ export function ProfileSummary() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
           <Row icon={Mail} label="Email" value={user?.email ?? "—"} />
           <Row icon={Phone} label="Phone" value={me?.phone || "—"} />
-          <Row icon={Layers} label="Account type" value={isPlatformAdmin ? "Platform administrator" : "Society member"} />
+          <Row
+            icon={Layers}
+            label="Account type"
+            value={
+              isPlatformAdmin
+                ? "Platform administrator"
+                : (role ?? "Society member").replace(/_/g, " ").toLowerCase()
+            }
+          />
           <Row icon={CalendarDays} label="Member since" value={formatDate(me?.date_joined)} />
         </div>
 

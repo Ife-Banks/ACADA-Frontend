@@ -40,6 +40,8 @@ export function usePlatformStats() {
   return useQuery({
     queryKey: qk.reports.platformStats,
     queryFn: getPlatformStats,
+    refetchInterval: SIXTY_SEC,
     staleTime: SIXTY_SEC,
+    refetchOnWindowFocus: true,
   });
 }

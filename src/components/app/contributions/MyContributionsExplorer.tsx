@@ -16,7 +16,7 @@ import {
   Wallet,
   Inbox,
 } from "lucide-react";
-import { useMyBalance, useMyContributions, useContributionPlans } from "@/hooks/useContributions";
+import { useMyBalance, useMyContributions, useAllPlans } from "@/hooks/useContributions";
 import { cn } from "@/lib/utils";
 import {
   Table,
@@ -100,13 +100,13 @@ function NoRows({ message }: { message: string }) {
 
 export function MyContributionsExplorer() {
   const balance = useMyBalance();
-  const plans = useContributionPlans();
+  const plans = useAllPlans();
   const [status, setStatus] = useState("all");
   const [page, setPage] = useState(1);
 
-  const defaultPlan =
-    (plans.data?.results ?? []).find((p) => p.is_active) ??
-    (plans.data?.results ?? [])[0];
+  const defaultPlan = (plans.data ?? []).find(
+    (p) => p.is_default && p.is_active && !p.effective_to
+  );
 
   const list = useMyContributions(page, PAGE_SIZE);
 
@@ -121,7 +121,7 @@ export function MyContributionsExplorer() {
   const to = Math.min(page * PAGE_SIZE, total);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="member-page-content flex flex-col gap-5">
       {/* ── Balance summary ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div
@@ -186,7 +186,7 @@ export function MyContributionsExplorer() {
           hint={
             defaultPlan
               ? `₦${parseFloat(defaultPlan.amount_fixed).toLocaleString("en-NG")}/month`
-              : "No active plan"
+              : "No default plan"
           }
           delay={180}
         />

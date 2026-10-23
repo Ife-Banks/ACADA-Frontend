@@ -12,13 +12,16 @@ import {
   ChevronRight,
   CreditCard,
   FileCheck2,
+  Handshake,
   Loader2,
   ShieldCheck,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useActiveLoans } from "@/hooks/useLoans";
+import { useActiveLoans, useGuarantorRequests } from "@/hooks/useLoans";
 import { LoanEligibilitySheet } from "./LoanEligibilitySheet";
 import { LoanApplicationSheet } from "./LoanApplicationSheet";
+import { MyLoanApplications } from "./MyLoanApplications";
+import { GuaranteeRequestsPanel } from "./GuaranteeRequestsPanel";
 import { LoanStatusBadge, RepaymentStatusBadge } from "./LoanBadges";
 import { ApiError } from "@/lib/api/client";
 import type { ActiveLoan } from "@/lib/types";
@@ -40,7 +43,7 @@ function LoanCard({ loan }: { loan: ActiveLoan }) {
   const summary: { label: string; value: string }[] = [
     { label: "Principal", value: money(loan.principal_amount) },
     { label: "Instalment", value: `${money(loan.monthly_installment)}/mo` },
-    { label: "Interest", value: `${loan.interest_rate}%` },
+    { label: "Interest", value: `${loan.interest_rate}% ${loan.interest_method === "reducing" ? "reducing" : "flat"}` },
     { label: "Term", value: `${loan.term_months} months` },
     { label: "Total repayable", value: money(loan.total_repayable) },
     { label: "Paid to date", value: money(loan.total_paid) },
@@ -183,6 +186,7 @@ function LoanCard({ loan }: { loan: ActiveLoan }) {
 
 export function MyLoansExplorer() {
   const [page, setPage] = useState(1);
+  const [tab, setTab] = useState<"active" | "applications" | "guarantees">("active");
   const [eligibilityOpen, setEligibilityOpen] = useState(false);
   const [applyOpen, setApplyOpen] = useState(false);
   const [prefill, setPrefill] = useState<{ productId?: string; maxAmount?: string }>({
@@ -191,6 +195,11 @@ export function MyLoansExplorer() {
   });
 
   const { data, isLoading, isError, error, refetch } = useActiveLoans(page, PAGE_SIZE);
+  const { data: guaranteeRequests } = useGuarantorRequests();
+
+  const pendingGuarantees = (guaranteeRequests ?? []).filter(
+    (request) => request.guarantor_status === "pending"
+  ).length;
 
   const loans = data?.results ?? [];
   const total = data?.count ?? 0;
@@ -205,14 +214,13 @@ export function MyLoansExplorer() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="member-page member-loans-page flex flex-col gap-5">
       {/* Header + actions */}
-      <div className="flex flex-wrap items-end justify-between gap-4">
+      <header className="member-page-heading">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground mb-1">My Loans</h1>
-          <p className="text-muted-foreground text-sm">
-            Check eligibility, apply for a loan, and track repayments.
-          </p>
+          <p className="member-page-eyebrow">Borrowing</p>
+          <h1>My loans</h1>
+          <p>Check eligibility, apply for a loan, and track repayments.</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -235,8 +243,62 @@ export function MyLoansExplorer() {
             Apply for loan
           </button>
         </div>
+      </header>
+
+      {/* Pending guarantee callout */}
+      {pendingGuarantees > 0 && (
+        <button
+          type="button"
+          onClick={() => setTab("guarantees")}
+          className="nm-raised-lg bg-surface rounded-2xl px-4 py-3.5 flex items-center gap-3 text-left transition-colors duration-200"
+          style={{ borderLeft: "3px solid var(--warning)" }}
+        >
+          <div className="nm-inset rounded-xl w-10 h-10 flex items-center justify-center shrink-0">
+            <Handshake className="w-5 h-5 text-warning" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-foreground">
+              {pendingGuarantees} guarantee{" "}
+              {pendingGuarantees === 1 ? "request" : "requests"} awaiting your
+              response
+            </p>
+            <p className="text-xs text-muted-foreground">
+              A member has asked you to stand as guarantor for a loan.
+            </p>
+          </div>
+          <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+        </button>
+      )}
+
+      {/* Tabs */}
+      <div className="flex items-center gap-1 nm-inset rounded-xl p-1 w-fit">
+        {(
+          [
+            { value: "active", label: "Active loans" },
+            { value: "applications", label: "Applications" },
+            { value: "guarantees", label: "Guarantee requests" },
+          ] as const
+        ).map((item) => (
+          <button
+            key={item.value}
+            type="button"
+            onClick={() => setTab(item.value)}
+            className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors duration-200 ${
+              tab === item.value
+                ? "bg-brand-primary text-white"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {item.label}
+            {item.value === "guarantees" && pendingGuarantees > 0
+              ? ` (${pendingGuarantees})`
+              : ""}
+          </button>
+        ))}
       </div>
 
+      {tab === "active" ? (
+        <>
       {/* Loading / error / empty */}
       {isLoading ? (
         <div className="space-y-4">
@@ -310,7 +372,14 @@ export function MyLoansExplorer() {
         </>
       )}
 
-      {isLoading && (
+        </>
+      ) : tab === "applications" ? (
+        <MyLoanApplications />
+      ) : (
+        <GuaranteeRequestsPanel />
+      )}
+
+      {tab === "active" && isLoading && (
         <p className="text-xs text-muted-foreground inline-flex items-center gap-1.5">
           <Loader2 className="w-3.5 h-3.5 animate-spin" />
           Syncing…

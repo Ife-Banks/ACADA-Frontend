@@ -324,17 +324,22 @@ export function MemberDetailView({ memberId }: { memberId: string }) {
         </Card>
       </div>
 
-      {/* ── Dialog state (persist across member changes) ── */}
-      <ChangeMemberRoleDialog
-        open={!!roleMember}
-        onClose={() => setRoleMember(null)}
-        member={roleMember}
-      />
-      <ChangeMemberStatusDialog
-        open={!!statusMember}
-        onClose={() => setStatusMember(null)}
-        member={statusMember}
-      />
+      {/* ── Dialog state (persist across member changes) ──
+          Mounted only for a role that may manage members. */}
+      {canManage && (
+        <>
+          <ChangeMemberRoleDialog
+            open={!!roleMember}
+            onClose={() => setRoleMember(null)}
+            member={roleMember}
+          />
+          <ChangeMemberStatusDialog
+            open={!!statusMember}
+            onClose={() => setStatusMember(null)}
+            member={statusMember}
+          />
+        </>
+      )}
       <EditMemberProfileSheet
         open={editProfileOpen}
         onClose={() => setEditProfileOpen(false)}

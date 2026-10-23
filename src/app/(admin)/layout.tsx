@@ -12,9 +12,9 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen bg-muted">
+    <div className="portal-shell flex min-h-screen bg-muted">
       <AdminSidebar />
-      <main className="flex-1 overflow-y-auto p-6 lg:p-8">{children}</main>
+      <main className="portal-main flex-1 overflow-y-auto p-6 lg:p-8">{children}</main>
     </div>
   );
 }

@@ -21,8 +21,10 @@ import {
   ClipboardCheck,
   CalendarDays,
   Inbox,
+  AlertTriangle,
 } from "lucide-react";
-import { useCycles } from "@/hooks/useContributions";
+import { useCycles, useAllPlans } from "@/hooks/useContributions";
+import { useAuth } from "@/hooks/useAuth";
 import type { ContributionCycle } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import {
@@ -129,6 +131,18 @@ export function CyclesExplorer() {
   const [bulkCycle, setBulkCycle] = useState<ContributionCycle | null>(null);
 
   const list = useCycles(page, PAGE_SIZE);
+  const plans = useAllPlans();
+  const { isExecutiveOrAbove } = useAuth();
+
+  /*
+   * The cycle generator only reads a default plan that is still open-ended
+   * (`effective_to IS NULL`). A plan with an end date is ignored even while
+   * that date is in the future, so mirror that rule here.
+   */
+  const defaultPlan = (plans.data ?? []).find(
+    (p) => p.is_default && p.is_active && !p.effective_to
+  );
+  const canCreateCycle = isExecutiveOrAbove && !!defaultPlan;
 
   const filtered = useMemo(() => {
     const rows = list.data?.results ?? [];
@@ -150,7 +164,7 @@ export function CyclesExplorer() {
   const to = Math.min(page * PAGE_SIZE, total);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="executive-page executive-cycles-page flex flex-col gap-5">
       {/* ── Stat tiles ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Stat
@@ -195,6 +209,33 @@ export function CyclesExplorer() {
         />
       </div>
 
+      {/* ── Default-plan guard ── */}
+      {!plans.isLoading && !plans.isError && !defaultPlan && (
+        <div
+          className="nm-raised rounded-2xl p-4 flex items-start gap-3"
+          style={{ borderLeft: "4px solid var(--warning)" }}
+        >
+          <AlertTriangle className="w-5 h-5 text-warning mt-0.5 shrink-0" />
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-foreground">
+              No active default contribution plan
+            </p>
+            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+              New cycles would generate zero entries because every member&apos;s
+              amount comes from the default plan.
+            </p>
+            {isExecutiveOrAbove && (
+              <Link
+                href="/executive/plans"
+                className="text-xs font-semibold text-brand-primary hover:underline mt-2 inline-block"
+              >
+                Set up a contribution plan
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ── Cycles table ── */}
       <div className="nm-raised-lg rounded-3xl overflow-hidden">
         {/* Toolbar */}
@@ -228,7 +269,15 @@ export function CyclesExplorer() {
           <button
             type="button"
             onClick={() => setCreateOpen(true)}
-            className="nm-btn-primary inline-flex items-center justify-center gap-2 rounded-xl bg-brand-primary text-white font-semibold text-sm px-4 py-2.5 hover:bg-brand-primary-hover transition-colors duration-200 shrink-0"
+            disabled={!canCreateCycle}
+            title={
+              !isExecutiveOrAbove
+                ? "Committee members cannot open cycles"
+                : !defaultPlan
+                ? "Create and mark a default contribution plan first"
+                : undefined
+            }
+            className="nm-btn-primary inline-flex items-center justify-center gap-2 rounded-xl bg-brand-primary text-white font-semibold text-sm px-4 py-2.5 hover:bg-brand-primary-hover transition-colors duration-200 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
           >
             <RefreshCw className="w-4 h-4" />
             New cycle
@@ -335,14 +384,18 @@ export function CyclesExplorer() {
                             <ExternalLink className="size-4" />
                             View cycle
                           </DropdownMenuItem>
-                          <DropdownMenuItem
-                            disabled={c.confirmed_count === c.entry_count}
-                            onClick={() => setBulkCycle(c)}
-                          >
-                            <ClipboardCheck className="size-4" />
-                            Confirm entries
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
+                          {isExecutiveOrAbove && (
+                            <>
+                              <DropdownMenuItem
+                                disabled={c.confirmed_count === c.entry_count}
+                                onClick={() => setBulkCycle(c)}
+                              >
+                                <ClipboardCheck className="size-4" />
+                                Confirm entries
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                            </>
+                          )}
                           <DropdownMenuItem
                             render={<Link href={`/executive/cycles/${c.id}`} />}
                           >
@@ -390,13 +443,17 @@ export function CyclesExplorer() {
       </div>
 
       {/* ── Action surfaces ── */}
-      <CreateCycleDialog open={createOpen} onClose={() => setCreateOpen(false)} />
-      <ConfirmCycleBulkSheet
-        open={!!bulkCycle}
-        onClose={() => setBulkCycle(null)}
-        cycleId={bulkCycle?.id ?? ""}
-        cycleDisplay={bulkCycle?.period_display ?? ""}
-      />
+      {isExecutiveOrAbove && (
+        <>
+          <CreateCycleDialog open={createOpen} onClose={() => setCreateOpen(false)} />
+          <ConfirmCycleBulkSheet
+            open={!!bulkCycle}
+            onClose={() => setBulkCycle(null)}
+            cycleId={bulkCycle?.id ?? ""}
+            cycleDisplay={bulkCycle?.period_display ?? ""}
+          />
+        </>
+      )}
     </div>
   );
 }

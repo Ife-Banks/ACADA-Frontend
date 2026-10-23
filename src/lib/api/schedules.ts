@@ -2,7 +2,7 @@
  * Schedules API — generate, list, export.
  */
 
-import { api, getAccessToken } from "./client";
+import { api, fetchWithAuth } from "./client";
 import type {
   ScheduleBatch,
   ScheduleBatchDetail,
@@ -27,36 +27,31 @@ export async function generateSchedule(payload: GenerateSchedulePayload) {
  * The view streams the file directly, so we use a native fetch here.
  */
 export async function exportScheduleCsv(id: string): Promise<void> {
-  const token = getAccessToken();
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1"}/schedules/${id}/export/csv/`,
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
+  const res = await fetchWithAuth(`/schedules/${id}/export/csv/`);
   if (!res.ok) throw new Error("CSV export failed.");
-  const blob = await res.blob();
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `schedule_${id}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
+  downloadBlob(await res.blob(), `schedule_${id}.csv`);
 }
 
 /**
  * Trigger an Excel export download.
  */
 export async function exportScheduleExcel(id: string): Promise<void> {
-  const token = getAccessToken();
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1"}/schedules/${id}/export/excel/`,
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
+  const res = await fetchWithAuth(`/schedules/${id}/export/excel/`);
   if (!res.ok) throw new Error("Excel export failed.");
-  const blob = await res.blob();
+  downloadBlob(await res.blob(), `schedule_${id}.xlsx`);
+}
+
+/**
+ * Save a blob via a temporary anchor. The anchor must be in the document for
+ * some browsers, and the object URL is revoked after the download starts.
+ */
+function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `schedule_${id}.xlsx`;
+  a.download = filename;
+  document.body.appendChild(a);
   a.click();
-  URL.revokeObjectURL(url);
+  a.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
 }

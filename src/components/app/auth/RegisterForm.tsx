@@ -137,8 +137,14 @@ export function RegisterForm() {
   }
 
   return (
-    <AuthCard eyebrow="Join your cooperative" title="Create your account" delay={100}>
-      <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-5">
+    <AuthCard
+      eyebrow="Join your cooperative"
+      title="Create your account"
+      subtitle="Your society admin reviews new memberships before sign-in is enabled."
+      delay={100}
+      className="auth-card-register"
+    >
+      <form onSubmit={handleSubmit(onSubmit)} noValidate className="auth-register-form flex flex-col">
         {serverError && <ErrorBanner message={serverError} />}
 
         {/* Name row */}
@@ -246,7 +252,7 @@ export function RegisterForm() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="nm-btn-primary w-full flex items-center justify-center gap-2 rounded-xl bg-brand-primary text-white font-semibold text-sm py-3.5 hover:bg-brand-primary-hover transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none mt-1"
+          className="auth-submit w-full flex items-center justify-center gap-2 rounded-xl font-semibold text-sm py-3.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none mt-1"
         >
           {isSubmitting ? (
             <>

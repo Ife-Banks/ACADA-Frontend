@@ -11,9 +11,9 @@ export default function MemberLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen bg-muted">
+    <div className="portal-shell member-portal-shell flex min-h-screen bg-muted">
       <MemberSidebar />
-      <main className="flex-1 overflow-y-auto p-6 lg:p-8">{children}</main>
+      <main className="portal-main member-portal-main flex-1 overflow-y-auto">{children}</main>
     </div>
   );
 }

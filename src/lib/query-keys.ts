@@ -23,12 +23,16 @@ export const qk = {
 
   notifications: {
     root: [ROOT, "notifications"] as const,
+    list: (page = 1, pageSize = 20) =>
+      [ROOT, "notifications", "list", { page, pageSize }] as const,
   },
 
   members: {
     root: [ROOT, "members"] as const,
     list: (page = 1, pageSize = 25) =>
       [ROOT, "members", "list", { page, pageSize }] as const,
+    all: [ROOT, "members", "all"] as const,
+    guarantorCandidates: [ROOT, "members", "guarantor-candidates"] as const,
     pending: [ROOT, "members", "pending"] as const,
     detail: (id: string) => [ROOT, "members", "detail", id] as const,
     profile: (id: string) => [ROOT, "members", "profile", id] as const,
@@ -40,6 +44,7 @@ export const qk = {
       [ROOT, "contributions", "list", { page, pageSize }] as const,
     balance: [ROOT, "contributions", "balance"] as const,
     plans: [ROOT, "contributions", "plans"] as const,
+    allPlans: [ROOT, "contributions", "plans", "all"] as const,
     cycles: (page = 1, pageSize = 25) =>
       [ROOT, "contributions", "cycles", { page, pageSize }] as const,
     cycle: (id: string) => [ROOT, "contributions", "cycles", id] as const,
@@ -60,14 +65,20 @@ export const qk = {
 
   loans: {
     root: [ROOT, "loans"] as const,
-    products: [ROOT, "loans", "products"] as const,
-    product: (id: string) => [ROOT, "loans", "products", id] as const,
-    applications: (page = 1, pageSize = 25) =>
-      [ROOT, "loans", "applications", { page, pageSize }] as const,
+    allProducts: [ROOT, "loans", "products", "all"] as const,
+    applications: (page = 1, pageSize = 25, search = "") =>
+      [ROOT, "loans", "applications", { page, pageSize, search }] as const,
+    myApplications: (page = 1, pageSize = 25) =>
+      [ROOT, "loans", "applications", "mine", { page, pageSize }] as const,
+    guarantorRequests: [ROOT, "loans", "applications", "guarantor"] as const,
+    guaranteeRequest: (id: string) =>
+      [ROOT, "loans", "applications", id, "guarantee"] as const,
     application: (id: string) => [ROOT, "loans", "applications", id] as const,
     active: (page = 1, pageSize = 25) =>
       [ROOT, "loans", "active", { page, pageSize }] as const,
     activeDetail: (id: string) => [ROOT, "loans", "active", id] as const,
+    quote: (productId: string, amount: string, term: string) =>
+      [ROOT, "loans", "quote", { productId, amount, term }] as const,
   },
 
   schedules: {
@@ -88,6 +99,7 @@ export const qk = {
     root: [ROOT, "tenants"] as const,
     all: (page = 1, pageSize = 25) =>
       [ROOT, "tenants", "list", { page, pageSize }] as const,
+    every: [ROOT, "tenants", "all"] as const,
     detail: (id: string) => [ROOT, "tenants", "detail", id] as const,
     settings: (id: string) => [ROOT, "tenants", "detail", id, "settings"] as const,
     rules: (id: string) => [ROOT, "tenants", "detail", id, "rules"] as const,

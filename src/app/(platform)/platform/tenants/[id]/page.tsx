@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { TenantDetailView } from "@/components/app/platform/TenantDetailView";
+import { RoleGate } from "@/components/app/shared/RoleGate";
 
 export const metadata: Metadata = { title: "Tenant Detail" };
 
@@ -9,13 +11,11 @@ interface Props {
 export default async function TenantDetailPage({ params }: Props) {
   const { id } = await params;
 
+  /* The platform console is SUPER_ADMIN's. The route prefix already
+     restricts it; the gate is the second lock. */
   return (
-    <div>
-      <h1 className="text-2xl font-semibold text-foreground mb-1">Tenant Detail</h1>
-      <p className="text-muted-foreground text-sm">Tenant ID: {id}</p>
-      <p className="text-muted-foreground text-sm mt-1">
-        Branding, settings, rule sets, and status management.
-      </p>
-    </div>
+    <RoleGate allow={["SUPER_ADMIN"]}>
+      <TenantDetailView id={id} />
+    </RoleGate>
   );
 }

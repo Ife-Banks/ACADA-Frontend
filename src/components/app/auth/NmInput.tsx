@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * NmInput — neumorphic text input with optional leading icon.
+ * NmInput — shared auth text input with an optional leading icon.
  *
  * Standard across every form in the auth module (login, register,
  * password change). Conveys focus and error states through
@@ -32,24 +32,17 @@ export function NmInput({
   return (
     <div
       className={cn(
-        "group/nminput flex items-center gap-3 rounded-xl px-4 py-3",
-        "transition-all duration-200 focus-within:ring-2 focus-within:ring-brand-primary/25",
+        "auth-control-wrapper group/nminput flex items-center gap-3 rounded-xl px-4 py-3",
+        error && "auth-control-error",
         wrapperClassName
       )}
-      style={{
-        boxShadow: error
-          ? "inset 3px 3px 8px rgba(220,38,38,0.12), inset -3px -3px 8px rgba(255,255,255,0.8)"
-          : "inset 3px 3px 8px var(--nm-shadow-dark), inset -3px -3px 8px var(--nm-shadow-light)",
-        background: "var(--nm-bg)",
-      }}
     >
       {Icon && (
-        <Icon className="w-4 h-4 text-muted-foreground group-focus-within/nminput:text-brand-primary shrink-0 transition-colors" />
+        <Icon className="auth-control-icon h-4 w-4 shrink-0 transition-colors" />
       )}
       <input
         className={cn(
-          "flex-1 bg-transparent text-sm text-foreground",
-          "placeholder:text-muted-foreground/80 outline-none min-w-0",
+          "auth-control-input min-w-0 flex-1 bg-transparent text-sm outline-none",
           className
         )}
         {...props}

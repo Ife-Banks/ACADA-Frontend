@@ -12,6 +12,7 @@
 import { useQuery } from "@tanstack/react-query";
 import {
   getPlans,
+  getAllPlans,
   getCycles,
   getCycle,
   getCycleEntries,
@@ -31,7 +32,16 @@ const SIXTY_SEC = 60_000;
 export function useContributionPlans() {
   return useQuery({
     queryKey: qk.contributions.plans,
-    queryFn: getPlans,
+    queryFn: () => getPlans(),
+    staleTime: FIVE_MIN,
+  });
+}
+
+/** Full plan list (every page) for default-plan checks and the plans screen. */
+export function useAllPlans() {
+  return useQuery({
+    queryKey: qk.contributions.allPlans,
+    queryFn: () => getAllPlans(),
     staleTime: FIVE_MIN,
   });
 }

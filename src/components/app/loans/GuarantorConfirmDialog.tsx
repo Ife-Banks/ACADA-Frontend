@@ -3,19 +3,22 @@
 /**
  * Screen 28 — Guarantor Confirmation Dialog
  *
- * Shown when a guarantor clicks the deep-link in their notification.
- * Renders the loan summary, then lets them confirm or decline with a reason.
+ * Opened from a guarantee request in the notification centre or from the
+ * GuaranteeRequests panel. Renders the loan summary, then lets the guarantor
+ * confirm or decline with a reason.
  *
+ * Calls GET  /loans/applications/{id}/guarantee-request/
  * Calls POST /loans/applications/{id}/confirm-guarantor/
  */
 
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { NmDialog } from "@/components/app/shared/NmDialog";
 import { NmField, NmTextarea, NmErrorBanner } from "@/components/app/shared/NmField";
-import { getLoanApplication, respondAsGuarantor } from "@/lib/api/loans";
+import { respondAsGuarantor } from "@/lib/api/loans";
+import { useGuaranteeRequest } from "@/hooks/useLoans";
 import { qk } from "@/lib/query-keys";
 import { ApiError } from "@/lib/api/client";
 
@@ -31,11 +34,10 @@ export function GuarantorConfirmDialog({ open, onClose, applicationId }: Props) 
   const [serverError, setServerError] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
-  const { data: application, isLoading } = useQuery({
-    queryKey: qk.loans.application(applicationId),
-    queryFn: () => getLoanApplication(applicationId),
-    enabled: open && !!applicationId,
-  });
+  const { data: application, isLoading, isError } = useGuaranteeRequest(
+    applicationId,
+    open
+  );
 
   const { mutate, isPending } = useMutation({
     mutationFn: () =>
@@ -50,7 +52,8 @@ export function GuarantorConfirmDialog({ open, onClose, applicationId }: Props) 
           : "You have declined the guarantee request."
       );
       queryClient.invalidateQueries({ queryKey: qk.notifications.root });
-      queryClient.invalidateQueries({ queryKey: qk.loans.application(applicationId) });
+      queryClient.invalidateQueries({ queryKey: qk.loans.guarantorRequests });
+      queryClient.invalidateQueries({ queryKey: qk.loans.root });
       handleClose();
     },
     onError: (err) => {
@@ -78,9 +81,17 @@ export function GuarantorConfirmDialog({ open, onClose, applicationId }: Props) 
       onClose={handleClose}
       title="Guarantor Request"
       description="A member has listed you as a guarantor for their loan application."
-      confirmLabel={decision === "confirm" ? "Confirm guarantee" : decision === "decline" ? "Decline" : "Choose an option"}
-      onConfirm={handleConfirm}
-      loading={isPending}
+      confirmLabel={
+        isError
+          ? "Close"
+          : decision === "confirm"
+          ? "Confirm guarantee"
+          : decision === "decline"
+          ? "Decline"
+          : "Choose an option"
+      }
+      onConfirm={isError ? handleClose : handleConfirm}
+      loading={isPending || isLoading}
       variant={decision === "decline" ? "danger" : "primary"}
       hideFooter={false}
     >
@@ -89,6 +100,18 @@ export function GuarantorConfirmDialog({ open, onClose, applicationId }: Props) 
           <p className="text-sm text-muted-foreground text-center py-6">
             Loading application details…
           </p>
+        )}
+
+        {isError && (
+          <div className="nm-inset rounded-xl px-4 py-6 text-center">
+            <p className="text-sm font-semibold text-foreground">
+              Request unavailable
+            </p>
+            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+              This guarantee request may have been withdrawn or already
+              processed. Ask the applicant to check the application status.
+            </p>
+          </div>
         )}
 
         {application && (
@@ -157,7 +180,7 @@ export function GuarantorConfirmDialog({ open, onClose, applicationId }: Props) 
             {decision && (
               <NmField
                 label={decision === "decline" ? "Reason for declining" : "Comment (optional)"}
-                hint={decision === "decline" ? "Please provide a brief reason." : undefined}
+                hint={decision === "decline" ? "Optional — the applicant will see this reason." : undefined}
               >
                 <NmTextarea
                   placeholder={

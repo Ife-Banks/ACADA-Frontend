@@ -62,22 +62,22 @@ export function NmStepSheet({
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
       <SheetContent
         side="right"
-        className={cn("flex flex-col gap-0 p-0 border-l-0 nm-surface", width)}
+        showCloseButton={false}
+        className={cn("portal-form-sheet loan-application-sheet flex flex-col gap-0 p-0 border-l-0", width)}
         style={{
           boxShadow:
             "-8px 0 32px rgba(15,23,42,0.12), -2px 0 8px rgba(15,23,42,0.06)",
         }}
       >
         {/* Header */}
-        <SheetHeader className="px-6 pt-6 pb-0 shrink-0">
+        <SheetHeader className="loan-sheet-header px-6 pt-6 pb-0 shrink-0">
           <div className="flex items-center justify-between mb-5">
-            <SheetTitle className="text-lg font-bold text-foreground">
+            <SheetTitle className="loan-sheet-title text-lg font-bold text-foreground">
               {title}
             </SheetTitle>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
-              style={{ boxShadow: "var(--nm-raised)" }}
+              className="loan-sheet-close p-2 rounded-xl text-muted-foreground transition-colors"
               aria-label="Close"
             >
               <X className="w-4 h-4" />
@@ -85,7 +85,7 @@ export function NmStepSheet({
           </div>
 
           {/* Step indicator */}
-          <div className="flex items-center gap-0 mb-5">
+          <div className="loan-stepper flex items-center gap-0 mb-5">
             {steps.map((label, i) => {
               const done    = i < currentStep;
               const active  = i === currentStep;
@@ -97,30 +97,18 @@ export function NmStepSheet({
                   <div className="flex flex-col items-center shrink-0">
                     <div
                       className={cn(
-                        "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300",
-                        done
-                          ? "bg-success text-white"
-                          : active
-                          ? "bg-brand-primary text-white"
-                          : "text-muted-foreground"
+                        "loan-step-marker w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300",
+                        done && "is-done",
+                        active && "is-active"
                       )}
-                      style={{
-                        boxShadow: active
-                          ? "0 0 0 4px rgba(26,86,219,0.2), var(--nm-raised)"
-                          : "var(--nm-raised)",
-                        background: done
-                          ? "var(--success)"
-                          : active
-                          ? "var(--brand-primary)"
-                          : "var(--nm-bg)",
-                      }}
                     >
                       {done ? "✓" : i + 1}
                     </div>
                     <span
                       className={cn(
-                        "text-[10px] mt-1 font-medium whitespace-nowrap",
-                        active ? "text-brand-primary" : "text-muted-foreground"
+                        "loan-step-label text-[10px] mt-1 font-medium whitespace-nowrap",
+                        active && "is-active",
+                        done && "is-done"
                       )}
                     >
                       {label}
@@ -130,12 +118,7 @@ export function NmStepSheet({
                   {/* Connector */}
                   {!isLast && (
                     <div
-                      className="flex-1 h-px mx-1 transition-all duration-500"
-                      style={{
-                        background: done
-                          ? "var(--success)"
-                          : "var(--border)",
-                      }}
+                      className={cn("loan-step-connector flex-1 h-px mx-2 transition-all duration-500", done && "is-done")}
                     />
                   )}
                 </div>
@@ -148,16 +131,16 @@ export function NmStepSheet({
         </SheetHeader>
 
         {/* Scrollable step body */}
-        <div className="flex-1 overflow-y-auto px-6 py-5">{children}</div>
+        <div className="loan-sheet-body flex-1 overflow-y-auto px-6 py-5">{children}</div>
 
         {/* Footer nav */}
-        <div className="px-6 py-4 border-t border-border shrink-0 nm-surface flex items-center justify-between gap-3">
+        <div className="loan-sheet-footer px-6 py-4 border-t shrink-0 flex items-center justify-between gap-3">
           {!isFirst ? (
             <button
               type="button"
               onClick={onBack}
               disabled={loading}
-              className="nm-btn-ghost rounded-xl px-4 py-2.5 text-sm font-semibold text-foreground flex items-center gap-1.5 border border-border disabled:opacity-50"
+              className="loan-sheet-back nm-btn-ghost rounded-xl px-4 py-2.5 text-sm font-semibold flex items-center gap-1.5 border disabled:opacity-50"
             >
               <ChevronLeft className="w-4 h-4" />
               Back
@@ -170,7 +153,7 @@ export function NmStepSheet({
             type="button"
             onClick={isLast ? onSubmit : onNext}
             disabled={loading || nextDisabled}
-            className="nm-btn-primary rounded-xl px-6 py-2.5 text-sm font-semibold text-white bg-brand-primary hover:bg-brand-primary-hover flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none transition-colors duration-200"
+            className="loan-sheet-next nm-btn-primary rounded-xl px-6 py-2.5 text-sm font-semibold text-white flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none transition-colors duration-200"
           >
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
             {isLast ? "Submit" : "Continue"}

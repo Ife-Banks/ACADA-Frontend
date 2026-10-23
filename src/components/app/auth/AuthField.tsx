@@ -1,45 +1,36 @@
 "use client";
 
-/**
- * AuthField — labeled field wrapper shared by all auth forms.
- *
- * Renders the uppercase label (with required marker), the control via
- * `children`, an optional hint, and an inline error message. Consistent
- * spacing and typography keep the module visually standard.
- */
+import { cloneElement, isValidElement, useId, type ReactElement, type ReactNode } from "react";
 
 interface AuthFieldProps {
   label: string;
   error?: string;
   hint?: string;
   required?: boolean;
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
-export function AuthField({
-  label,
-  error,
-  hint,
-  required,
-  children,
-}: AuthFieldProps) {
+type FieldControlProps = { id?: string; "aria-describedby"?: string };
+
+export function AuthField({ label, error, hint, required, children }: AuthFieldProps) {
+  const id = useId();
+  const descriptionId = error ? `${id}-error` : hint ? `${id}-hint` : undefined;
+  const control = isValidElement(children)
+    ? cloneElement(children as ReactElement<FieldControlProps>, {
+        id,
+        "aria-describedby": descriptionId,
+      })
+    : children;
+
   return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-semibold text-foreground uppercase tracking-wide">
-        {label}
-        {required && <span className="text-destructive ml-0.5">*</span>}
+    <div className="auth-field">
+      <label className="auth-field-label" htmlFor={id}>
+        {label}{required && <span aria-hidden="true">*</span>}
+        {required && <span className="sr-only"> required</span>}
       </label>
-      {children}
-      {hint && !error && (
-        <p className="text-[11px] text-muted-foreground leading-relaxed">
-          {hint}
-        </p>
-      )}
-      {error && (
-        <p className="text-xs text-destructive font-medium" role="alert">
-          {error}
-        </p>
-      )}
+      {control}
+      {hint && !error && <p className="auth-field-hint" id={`${id}-hint`}>{hint}</p>}
+      {error && <p className="auth-field-error" id={`${id}-error`} role="alert">{error}</p>}
     </div>
   );
 }

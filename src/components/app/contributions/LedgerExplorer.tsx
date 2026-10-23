@@ -71,9 +71,9 @@ export function LedgerExplorer() {
   const to = Math.min(page * PAGE_SIZE, total);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="executive-page executive-ledger-page flex flex-col gap-5">
       {/* Intro note */}
-      <div className="nm-raised-lg rounded-3xl p-5 flex items-start gap-3" style={{ animation: "var(--animate-fade-up)" }}>
+      <div className="executive-ledger-intro nm-raised-lg rounded-3xl p-5 flex items-start gap-3" style={{ animation: "var(--animate-fade-up)" }}>
         <span className="w-10 h-10 rounded-xl bg-brand-primary/8 flex items-center justify-center shrink-0">
           <BookOpen className="w-5 h-5 text-brand-primary" />
         </span>

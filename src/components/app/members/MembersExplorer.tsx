@@ -4,7 +4,7 @@
  * MembersExplorer — the Members list portal for SOCIETY_ADMIN.
  *
  * Data (all real API calls):
- *   GET /members/            → paginated members table (All tab)
+ *   GET /members/            → every page, filtered/paginated locally (All tab)
  *   GET /members/pending/    → pending approvals (Pending tab)
  *   PATCH /members/{id}/status/ → quick approve
  *
@@ -34,7 +34,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { useMembersList, usePendingMembers } from "@/hooks/useMembers";
+import { useAllMembers, usePendingMembers } from "@/hooks/useMembers";
 import { updateMemberStatus } from "@/lib/api/members";
 import { qk } from "@/lib/query-keys";
 import { ApiError } from "@/lib/api/client";
@@ -103,20 +103,18 @@ function Stat({ icon: Icon, label, value, hint, onClick, delay }: {
       disabled={!isClickable}
       onClick={onClick}
       className={cn(
-        "nm-raised-lg rounded-3xl p-5 text-left w-full flex flex-col gap-3",
+        "members-stat rounded-2xl p-4 text-left w-full flex items-center gap-3",
         isClickable && "cursor-pointer transition-transform duration-200 hover:scale-[1.02] active:scale-[0.99]"
       )}
       style={{ animation: "var(--animate-fade-up)", animationDelay: `${delay}ms` }}
     >
-      <div className="flex items-center justify-between">
-        <div className="w-10 h-10 rounded-xl bg-brand-primary/8 flex items-center justify-center">
-          <Icon className="w-5 h-5 text-brand-primary" />
-        </div>
+      <div className="members-stat-icon">
+        <Icon className="w-5 h-5" />
       </div>
-      <div>
-        <p className="text-2xl font-bold text-foreground">{value}</p>
-        <p className="text-xs font-semibold text-muted-foreground mt-0.5">{label}</p>
-        {hint && <p className="text-[10px] text-muted-foreground/70 mt-0.5">{hint}</p>}
+      <div className="min-w-0">
+        <p className="members-stat-value">{value}</p>
+        <p className="members-stat-label">{label}</p>
+        {hint && <p className="members-stat-hint">{hint}</p>}
       </div>
     </button>
   );
@@ -138,12 +136,15 @@ export function MembersExplorer() {
   const [roleMember, setRoleMember] = useState<Member | null>(null);
   const [statusMember, setStatusMember] = useState<Member | null>(null);
 
-  const list = useMembersList({ page, page_size: PAGE_SIZE });
+  const list = useAllMembers();
   const pending = usePendingMembers();
 
-  /* Client-side filters over the current page */
+  /*
+   * Load every page once and filter over the full roster. Pagination below
+   * is client-side, so the roster never shows a partial view of a society.
+   */
   const filtered = useMemo(() => {
-    const rows = list.data?.results ?? [];
+    const rows = list.data ?? [];
     const term = search.trim().toLowerCase();
     return rows.filter((m) => {
       const matchesStatus = status === "all" || m.membership_status === status;
@@ -172,9 +173,16 @@ export function MembersExplorer() {
       ),
   });
 
-  const total = list.data?.count ?? 0;
-  const from = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
-  const to = Math.min(page * PAGE_SIZE, total);
+  const allMembers = list.data ?? [];
+  const filteredTotal = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(filteredTotal / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pageRows = filtered.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
+  const from = filteredTotal === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const to = Math.min(currentPage * PAGE_SIZE, filteredTotal);
 
   function switchTab(next: string) {
     setTab(next);
@@ -184,14 +192,32 @@ export function MembersExplorer() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="members-workspace flex flex-col gap-5">
+      <header className="members-heading">
+        <div>
+          <p className="members-eyebrow">Society directory</p>
+          <h1>Members</h1>
+          <p>Review membership, manage access, and keep your cooperative roster up to date.</p>
+        </div>
+        {canManage && (
+          <button
+            type="button"
+            onClick={() => setSheetOpen(true)}
+            className="members-add-button"
+          >
+            <UserPlus className="w-4 h-4" />
+            Add member
+          </button>
+        )}
+      </header>
+
       {/* ── Stat tiles ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="members-stats grid grid-cols-1 sm:grid-cols-3 gap-3">
         <Stat
           icon={Users}
           label="Total members"
-          value={list.isLoading ? "…" : total}
-          hint={`Showing ${from}–${to} of ${total}`}
+          value={list.isLoading ? "…" : allMembers.length}
+          hint={`Showing ${from}–${to} of ${filteredTotal}`}
           delay={0}
         />
         <Stat
@@ -212,8 +238,8 @@ export function MembersExplorer() {
       </div>
 
       {/* ── Tabs: All members / Pending approvals ── */}
-      <Tabs value={tab} onValueChange={switchTab}>
-        <TabsList variant="line" className="gap-4">
+      <Tabs value={tab} onValueChange={switchTab} className="members-tabs">
+        <TabsList variant="line" className="members-tabs-list">
           <TabsTrigger value="all" className="text-sm">
             All members
           </TabsTrigger>
@@ -229,10 +255,10 @@ export function MembersExplorer() {
 
         {/* ══ All members ══ */}
         <TabsContent value="all" className="mt-4">
-          <div className="nm-raised-lg rounded-3xl overflow-hidden">
+          <div className="members-panel">
             {/* Toolbar */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 border-b border-border">
-              <div className="flex-1 grid grid-cols-1 sm:grid-cols-[1fr_150px] gap-3">
+            <div className="members-toolbar">
+              <div className="members-filter-controls">
                 <NmInput
                   icon={Search}
                   type="search"
@@ -242,7 +268,7 @@ export function MembersExplorer() {
                     setSearch(e.target.value);
                     setPage(1);
                   }}
-                  className="py-2.5"
+                  className="members-search-input py-2.5"
                 />
                 <NmSelect
                   value={status}
@@ -250,7 +276,7 @@ export function MembersExplorer() {
                     setStatus(e.target.value);
                     setPage(1);
                   }}
-                  className="py-2.5"
+                  className="members-status-select py-2.5"
                 >
                   <option value="all">All statuses</option>
                   <option value="active">Active</option>
@@ -259,20 +285,11 @@ export function MembersExplorer() {
                   <option value="removed">Removed</option>
                 </NmSelect>
               </div>
-              {canManage && (
-                <button
-                  type="button"
-                  onClick={() => setSheetOpen(true)}
-                  className="nm-btn-primary inline-flex items-center justify-center gap-2 rounded-xl bg-brand-primary text-white font-semibold text-sm px-4 py-2.5 hover:bg-brand-primary-hover transition-colors duration-200 shrink-0"
-                >
-                  <UserPlus className="w-4 h-4" />
-                  Add member
-                </button>
-              )}
+              <p className="members-result-count">{filteredTotal === 1 ? "1 member" : `${filteredTotal} members`}</p>
             </div>
 
             {/* Table */}
-            <div className="px-4 pb-4">
+            <div className="members-table-area">
               {list.isError && (
                 <div className="pt-4">
                   <NmErrorBanner message="Could not load members. Check your connection and try again." />
@@ -292,7 +309,13 @@ export function MembersExplorer() {
                   ))}
                 </div>
               ) : filtered.length === 0 ? (
-                <NoRows message={search ? "No members match your search." : "No members yet."} />
+                <NoRows
+                  message={
+                    search || status !== "all"
+                      ? "No members match your filters."
+                      : "No members yet."
+                  }
+                />
               ) : (
                 <Table>
                   <TableHeader>
@@ -305,7 +328,7 @@ export function MembersExplorer() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filtered.map((m) => (
+                    {pageRows.map((m) => (
                       <TableRow key={m.id} className="group">
                         <TableCell>
                           <Link href={`/admin/members/${m.id}`} className="flex items-center gap-3 min-w-0">
@@ -376,27 +399,30 @@ export function MembersExplorer() {
             </div>
 
             {/* Pagination */}
-            {!list.isLoading && total > 0 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+            {!list.isLoading && filteredTotal > PAGE_SIZE && (
+              <div className="members-pagination">
                 <p className="text-xs text-muted-foreground">
                   Showing <span className="font-semibold text-foreground">{from}</span>–
                   <span className="font-semibold text-foreground">{to}</span> of{" "}
-                  <span className="font-semibold text-foreground">{total}</span>
+                  <span className="font-semibold text-foreground">{filteredTotal}</span>
                 </p>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    disabled={!list.data?.previous}
-                    onClick={() => setPage((p) => p - 1)}
+                    disabled={currentPage <= 1}
+                    onClick={() => setPage(currentPage - 1)}
                     className="nm-chip inline-flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     <ChevronLeft className="w-3.5 h-3.5" />
                     Prev
                   </button>
+                  <span className="text-xs text-muted-foreground">
+                    Page {currentPage} of {totalPages}
+                  </span>
                   <button
                     type="button"
-                    disabled={!list.data?.next}
-                    onClick={() => setPage((p) => p + 1)}
+                    disabled={currentPage >= totalPages}
+                    onClick={() => setPage(currentPage + 1)}
                     className="nm-chip inline-flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     Next
@@ -410,7 +436,7 @@ export function MembersExplorer() {
 
         {/* ══ Pending approvals ══ */}
         <TabsContent value="pending" className="mt-4">
-          <div className="nm-raised-lg rounded-3xl p-4">
+          <div className="members-panel members-pending-panel">
             {pending.isLoading ? (
               <div className="flex flex-col gap-3 pt-2">
                 {Array.from({ length: 4 }).map((_, i) => (
@@ -426,7 +452,7 @@ export function MembersExplorer() {
                 message="There are no members waiting for approval right now."
               />
             ) : (
-              <div className="flex flex-col divide-y divide-border">
+              <div className="members-pending-list flex flex-col divide-y divide-border">
                 {pending.data.map((m) => (
                   <div key={m.id} className="flex items-center gap-3 py-3 px-1 flex-wrap sm:flex-nowrap">
                     <Avatar className="h-9 w-9 shrink-0">
@@ -449,26 +475,30 @@ export function MembersExplorer() {
                       <span className="nm-chip rounded-full px-2.5 py-1 text-[10px] font-semibold text-muted-foreground">
                         {m.role.name}
                       </span>
-                      <button
-                        type="button"
-                        disabled={approve.isPending}
-                        onClick={() => approve.mutate(m.id)}
-                        className="nm-btn-primary inline-flex items-center gap-1.5 rounded-xl bg-success/90 text-white font-semibold text-xs px-3 py-2 hover:bg-success transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
-                      >
-                        {approve.isPending ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                        )}
-                        Approve
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setStatusMember(m)}
-                        className="nm-chip inline-flex items-center gap-1.5 rounded-xl text-xs font-semibold text-muted-foreground hover:text-destructive hover:bg-destructive/5 px-3 py-2"
-                      >
-                        More
-                      </button>
+                      {canManage && (
+                        <>
+                          <button
+                            type="button"
+                            disabled={approve.isPending}
+                            onClick={() => approve.mutate(m.id)}
+                            className="nm-btn-primary inline-flex items-center gap-1.5 rounded-xl bg-success/90 text-white font-semibold text-xs px-3 py-2 hover:bg-success transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                          >
+                            {approve.isPending ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                            )}
+                            Approve
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setStatusMember(m)}
+                            className="nm-chip inline-flex items-center gap-1.5 rounded-xl text-xs font-semibold text-muted-foreground hover:text-destructive hover:bg-destructive/5 px-3 py-2"
+                          >
+                            More
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -478,18 +508,25 @@ export function MembersExplorer() {
         </TabsContent>
       </Tabs>
 
-      {/* ── Action surfaces ── */}
-      <AddMemberSheet open={sheetOpen} onClose={() => setSheetOpen(false)} />
-      <ChangeMemberRoleDialog
-        open={!!roleMember}
-        onClose={() => setRoleMember(null)}
-        member={roleMember}
-      />
-      <ChangeMemberStatusDialog
-        open={!!statusMember}
-        onClose={() => setStatusMember(null)}
-        member={statusMember}
-      />
+      {/* ── Action surfaces ──
+          Mounted only for a role that may actually manage members, so a
+          write-capable dialog is never in the tree of a role that could
+          not open it. */}
+      {canManage && (
+        <>
+          <AddMemberSheet open={sheetOpen} onClose={() => setSheetOpen(false)} />
+          <ChangeMemberRoleDialog
+            open={!!roleMember}
+            onClose={() => setRoleMember(null)}
+            member={roleMember}
+          />
+          <ChangeMemberStatusDialog
+            open={!!statusMember}
+            onClose={() => setStatusMember(null)}
+            member={statusMember}
+          />
+        </>
+      )}
     </div>
   );
 }

@@ -34,6 +34,7 @@ interface NmSheetProps {
   children: React.ReactNode;
   /** Slot rendered in the footer area (usually action buttons) */
   footer?: React.ReactNode;
+  className?: string;
 }
 
 export function NmSheet({
@@ -45,14 +46,16 @@ export function NmSheet({
   width = "sm:max-w-lg",
   children,
   footer,
+  className,
 }: NmSheetProps) {
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
       <SheetContent
         side={side}
         className={cn(
-          "flex flex-col gap-0 p-0 border-l-0 nm-surface",
-          width
+          "portal-form-sheet flex flex-col gap-0 p-0 border-l-0 nm-surface",
+          width,
+          className
         )}
         style={{
           boxShadow:

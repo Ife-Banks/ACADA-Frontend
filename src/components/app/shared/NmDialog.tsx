@@ -39,6 +39,7 @@ interface NmDialogProps {
   variant?: "primary" | "danger";
   /** Hide the default footer (when the form provides its own submit) */
   hideFooter?: boolean;
+  className?: string;
   children: React.ReactNode;
 }
 
@@ -52,6 +53,7 @@ export function NmDialog({
   loading = false,
   variant = "primary",
   hideFooter = false,
+  className,
   children,
 }: NmDialogProps) {
   const confirmBg =
@@ -62,7 +64,7 @@ export function NmDialog({
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent
-        className="nm-surface border-0 rounded-3xl p-0 overflow-hidden gap-0 max-w-md w-full"
+        className={cn("portal-form-dialog nm-surface border-0 rounded-3xl p-0 overflow-hidden gap-0 max-w-md w-full", className)}
         style={{
           boxShadow:
             "0 20px 60px rgba(15,23,42,0.18), 10px 10px 28px var(--nm-shadow-dark), -10px -10px 28px var(--nm-shadow-light)",

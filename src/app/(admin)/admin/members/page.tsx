@@ -1,18 +1,15 @@
 import type { Metadata } from "next";
 import { MembersExplorer } from "@/components/app/members/MembersExplorer";
+import { RoleGate } from "@/components/app/shared/RoleGate";
 
 export const metadata: Metadata = { title: "Members" };
 
 export default function MembersPage() {
+  /* Member records are the society admin's. The route prefix already
+     restricts this page; the gate is the second lock. */
   return (
-    <div className="flex flex-col gap-6">
-      <header>
-        <h1 className="text-2xl font-semibold text-foreground mb-1">Members</h1>
-        <p className="text-muted-foreground text-sm">
-          Manage your cooperative&apos;s members — approvals, roles, and access.
-        </p>
-      </header>
+    <RoleGate allow={["SOCIETY_ADMIN"]}>
       <MembersExplorer />
-    </div>
+    </RoleGate>
   );
 }

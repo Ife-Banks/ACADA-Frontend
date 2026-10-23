@@ -11,6 +11,7 @@ import { ChevronRight, CreditCard, Loader2, Search, Users } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { NmInput, NmSelect } from "@/components/app/shared/NmField";
 import { useLoanApplications } from "@/hooks/useLoans";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { LoanApplicationStatusBadge } from "./LoanBadges";
 import { ApiError } from "@/lib/api/client";
 import type { LoanApplicationStatus } from "@/lib/types";
@@ -75,7 +76,15 @@ export function LoanApplicationsExplorer() {
   const [status, setStatus] = useState<StatusFilter>("all");
   const [search, setSearch] = useState("");
 
-  const { data, isLoading, isError, error, refetch } = useLoanApplications(page, PAGE_SIZE);
+  // The API filters by member name, email, product and purpose, so the
+  // search box matches across every page — not just the current one.
+  const debouncedSearch = useDebouncedValue(search.trim(), 350);
+
+  const { data, isLoading, isError, error, refetch } = useLoanApplications(
+    page,
+    PAGE_SIZE,
+    debouncedSearch
+  );
 
   const rows = useMemo(() => data?.results ?? [], [data]);
   const total = data?.count ?? 0;
@@ -83,17 +92,17 @@ export function LoanApplicationsExplorer() {
   const from = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
   const to = Math.min(page * PAGE_SIZE, total);
 
+  // Status stays a client-side filter so the stat tiles keep counting every
+  // status on the loaded page.
   const filtered = useMemo(() => {
-    return rows.filter((r) => {
-      const matchesStatus = status === "all" || r.status === status;
-      const q = search.trim().toLowerCase();
-      const matchesSearch =
-        !q ||
-        r.member_name.toLowerCase().includes(q) ||
-        r.product_name.toLowerCase().includes(q);
-      return matchesStatus && matchesSearch;
-    });
-  }, [rows, status, search]);
+    return rows.filter((r) => status === "all" || r.status === status);
+  }, [rows, status]);
+
+  // A new search starts from the first page of results.
+  function handleSearchChange(value: string) {
+    setSearch(value);
+    setPage(1);
+  }
 
   const stats = useMemo(() => {
     const awaitingAction = rows.filter((r) =>
@@ -105,24 +114,25 @@ export function LoanApplicationsExplorer() {
     const approved = rows.filter((r) =>
       ["approved", "disbursed"].includes(r.status)
     ).length;
-    return { total: rows.length, awaitingAction, awaitingGuarantors, approved };
+    return { awaitingAction, awaitingGuarantors, approved };
   }, [rows]);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="executive-page executive-loans-page flex flex-col gap-5">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-semibold text-foreground mb-1">Loan Applications</h1>
-        <p className="text-muted-foreground text-sm">
-          Review and approve escalated loan applications.
-        </p>
-      </div>
+      <header className="executive-page-heading">
+        <div>
+          <p className="executive-page-eyebrow">Lending</p>
+          <h1>Loan applications</h1>
+          <p>Review and approve escalated loan applications.</p>
+        </div>
+      </header>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatTile
           label="Applications"
-          value={String(stats.total)}
+          value={String(total)}
           index={0}
           onClick={() => setStatus("all")}
           inactive={status !== "all"}
@@ -157,8 +167,8 @@ export function LoanApplicationsExplorer() {
             <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2" />
             <NmInput
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search member or product…"
+              onChange={(e) => handleSearchChange(e.target.value)}
+              placeholder="Search member, email, product or purpose…"
               className="pl-9"
             />
           </div>

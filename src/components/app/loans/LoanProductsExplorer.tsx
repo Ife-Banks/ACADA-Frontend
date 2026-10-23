@@ -6,11 +6,30 @@
  */
 
 import { useMemo, useState } from "react";
-import { Loader2, Plus, Search } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  Loader2,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Power,
+  Search,
+} from "lucide-react";
+import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { NmDialog } from "@/components/app/shared/NmDialog";
 import { NmInput } from "@/components/app/shared/NmField";
-import { useLoanProducts } from "@/hooks/useLoans";
+import { useAllLoanProducts } from "@/hooks/useLoans";
 import { CreateLoanProductDialog } from "./CreateLoanProductDialog";
+import { updateLoanProduct } from "@/lib/api/loans";
+import { qk } from "@/lib/query-keys";
 import { ApiError } from "@/lib/api/client";
 import type { LoanProduct } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -47,8 +66,8 @@ function StatTile({
       disabled={!onClick}
       onClick={onClick}
       className={cn(
-        "nm-raised bg-surface rounded-3xl p-5 text-left flex flex-col gap-1.5 transition-all duration-200",
-        onClick && "hover:-translate-y-0.5 hover:shadow-lg",
+        "loan-products-stat text-left flex flex-col gap-1.5 transition-all duration-200",
+        onClick && "cursor-pointer",
         inactive && "opacity-50"
       )}
       style={{ animation: `var(--animate-fade-up) ${150 + index * 60}ms both` }}
@@ -63,7 +82,15 @@ function StatTile({
 
 /* ─── Product row ───────────────────────────────────────────────── */
 
-function ProductRow({ product }: { product: LoanProduct }) {
+function ProductRow({
+  product,
+  onEdit,
+  onToggle,
+}: {
+  product: LoanProduct;
+  onEdit: (product: LoanProduct) => void;
+  onToggle: (product: LoanProduct) => void;
+}) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -74,8 +101,8 @@ function ProductRow({ product }: { product: LoanProduct }) {
       >
         <td className="py-3.5 pr-4">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-brand-primary/10 flex items-center justify-center shrink-0">
-              <span className="text-brand-primary font-bold text-sm">
+            <div className="loan-product-mark">
+              <span className="font-bold text-sm">
                 {product.name.charAt(0).toUpperCase()}
               </span>
             </div>
@@ -89,6 +116,9 @@ function ProductRow({ product }: { product: LoanProduct }) {
         </td>
         <td className="py-3.5 pr-4 text-sm font-semibold text-foreground whitespace-nowrap">
           {product.interest_rate}%
+          <span className="block text-[11px] font-normal text-muted-foreground">
+            {product.interest_method === "reducing" ? "reducing" : "flat"}
+          </span>
         </td>
         <td className="py-3.5 pr-4 text-sm text-foreground whitespace-nowrap">
           {money(product.max_amount)}
@@ -111,16 +141,50 @@ function ProductRow({ product }: { product: LoanProduct }) {
             {product.is_active ? "Active" : "Inactive"}
           </span>
         </td>
+        <td className="py-3.5 pl-2 text-right">
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              onClick={(e) => e.stopPropagation()}
+              className="loan-product-actions inline-flex h-8 w-8 items-center justify-center rounded-xl transition-colors hover:text-foreground"
+              aria-label={`Actions for ${product.name}`}
+            >
+              <MoreHorizontal className="w-4 h-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(product);
+                }}
+              >
+                <Pencil className="size-4" />
+                Edit product
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                variant={product.is_active ? "destructive" : undefined}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggle(product);
+                }}
+              >
+                <Power className="size-4" />
+                {product.is_active ? "Deactivate" : "Activate"}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </td>
       </tr>
       {open && (
         <tr>
-          <td colSpan={6} className="pb-4 pr-4">
+          <td colSpan={7} className="pb-4 pr-4">
             <div
-              className="nm-inset rounded-2xl p-4 grid grid-cols-2 sm:grid-cols-3 gap-3"
+              className="loan-products-details rounded-xl p-4 grid grid-cols-2 sm:grid-cols-3 gap-3"
               style={{ animation: "var(--animate-fade-up)" }}
             >
               {[
                 { label: "Description", value: product.description },
+                { label: "Interest basis", value: product.interest_method === "reducing" ? "Reducing balance (amortised)" : "Flat (simple) interest" },
                 { label: "Max multiplier", value: `${product.max_multiplier}× contributions` },
                 { label: "Auto-approve ≤", value: money(product.auto_approval_threshold) },
                 { label: "Min membership", value: `${product.min_membership_months} months` },
@@ -143,15 +207,36 @@ function ProductRow({ product }: { product: LoanProduct }) {
 /* ─── Explorer ──────────────────────────────────────────────────── */
 
 export function LoanProductsExplorer() {
-  const { data, isLoading, isError, error, refetch } = useLoanProducts();
+  const { data, isLoading, isError, error, refetch } = useAllLoanProducts();
+  const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [search, setSearch] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
+  const [editing, setEditing] = useState<LoanProduct | null>(null);
+  const [toggleTarget, setToggleTarget] = useState<LoanProduct | null>(null);
 
-  const products = useMemo(
-    () => data?.results ?? [],
-    [data]
-  );
+  const toggleProduct = useMutation({
+    mutationFn: (product: LoanProduct) =>
+      updateLoanProduct(product.id, { is_active: !product.is_active }),
+    onSuccess: (updated) => {
+      toast.success(
+        updated.is_active
+          ? `${updated.name} activated.`
+          : `${updated.name} deactivated.`
+      );
+      setToggleTarget(null);
+      queryClient.invalidateQueries({ queryKey: qk.loans.root });
+    },
+    onError: (err) => {
+      toast.error(
+        err instanceof ApiError
+          ? err.messages[0] ?? "Could not update the product."
+          : "Could not update the product."
+      );
+    },
+  });
+
+  const products = useMemo(() => data ?? [], [data]);
 
   const filtered = useMemo(() => {
     return products.filter((p) => {
@@ -185,27 +270,28 @@ export function LoanProductsExplorer() {
   }, [products]);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="loan-products-workspace flex flex-col gap-5">
       {/* Header */}
-      <div className="flex flex-wrap items-end justify-between gap-4">
+      <header className="loan-products-heading">
         <div>
+          <p className="loan-products-eyebrow">Credit settings</p>
           <h1 className="text-2xl font-semibold text-foreground mb-1">Loan Products</h1>
           <p className="text-muted-foreground text-sm">
-            Rates, terms, guarantor requirements and auto-approval thresholds.
+            Set the rates, terms, and eligibility rules members can apply for.
           </p>
         </div>
         <button
           type="button"
           onClick={() => setCreateOpen(true)}
-          className="nm-btn-primary flex items-center gap-2 rounded-xl bg-brand-primary text-white text-sm font-semibold px-4 py-2.5 hover:bg-brand-primary-hover transition-colors duration-200"
+          className="loan-products-add-button"
         >
           <Plus className="w-4 h-4" />
           New product
         </button>
-      </div>
+      </header>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="loan-products-stats grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatTile
           label="Total products"
           value={String(stats.total)}
@@ -233,28 +319,28 @@ export function LoanProductsExplorer() {
       </div>
 
       {/* List */}
-      <div className="nm-raised-lg bg-surface rounded-3xl p-5">
-        <div className="flex flex-wrap items-center gap-3 mb-4">
-          <div className="relative flex-1 min-w-[220px]">
+      <div className="loan-products-panel">
+        <div className="loan-products-toolbar">
+          <div className="loan-products-search relative flex-1 min-w-[220px]">
             <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2" />
             <NmInput
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search products…"
-              className="pl-9"
+              className="loan-products-search-input pl-9"
             />
           </div>
-          <div className="flex items-center gap-1 nm-inset rounded-xl p-1">
+          <div className="loan-products-filters">
             {FILTERS.map((f) => (
               <button
                 key={f.value}
                 type="button"
                 onClick={() => setStatusFilter(f.value)}
                 className={cn(
-                  "px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors duration-200",
+                  "loan-products-filter transition-colors duration-150",
                   statusFilter === f.value
-                    ? "bg-brand-primary text-white"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "is-active"
+                    : ""
                 )}
               >
                 {f.label}
@@ -297,7 +383,7 @@ export function LoanProductsExplorer() {
             <table className="w-full min-w-[720px]">
               <thead>
                 <tr className="text-left border-b border-border/60">
-                  {["Product", "Rate", "Max amount", "Term", "Guarantors", "Status"].map((h) => (
+                  {["Product", "Rate", "Max amount", "Term", "Guarantors", "Status", "Actions"].map((h) => (
                     <th
                       key={h}
                       className="pb-2.5 pr-4 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground whitespace-nowrap"
@@ -309,7 +395,12 @@ export function LoanProductsExplorer() {
               </thead>
               <tbody className="divide-y divide-border/40">
                 {filtered.map((p) => (
-                  <ProductRow key={p.id} product={p} />
+                  <ProductRow
+                    key={p.id}
+                    product={p}
+                    onEdit={(product) => setEditing(product)}
+                    onToggle={(product) => setToggleTarget(product)}
+                  />
                 ))}
               </tbody>
             </table>
@@ -317,7 +408,37 @@ export function LoanProductsExplorer() {
         )}
       </div>
 
-      <CreateLoanProductDialog open={createOpen} onClose={() => setCreateOpen(false)} />
+      <CreateLoanProductDialog
+        open={createOpen || !!editing}
+        onClose={() => {
+          setCreateOpen(false);
+          setEditing(null);
+        }}
+        product={editing}
+      />
+
+      <NmDialog
+        className="loan-products-dialog"
+        open={!!toggleTarget}
+        onClose={() => setToggleTarget(null)}
+        title={toggleTarget?.is_active ? "Deactivate loan product" : "Activate loan product"}
+        description={
+          toggleTarget
+            ? toggleTarget.is_active
+              ? `${toggleTarget.name} will no longer be available for new loan applications. Existing loans are unaffected.`
+              : `${toggleTarget.name} will become available for new loan applications.`
+            : undefined
+        }
+        confirmLabel={toggleTarget?.is_active ? "Deactivate" : "Activate"}
+        variant={toggleTarget?.is_active ? "danger" : "primary"}
+        loading={toggleProduct.isPending}
+        onConfirm={() => toggleTarget && toggleProduct.mutate(toggleTarget)}
+      >
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          Product settings and history are kept. You can reactivate it at any
+          time.
+        </p>
+      </NmDialog>
 
       {isLoading && (
         <p className="text-xs text-muted-foreground inline-flex items-center gap-1.5">
