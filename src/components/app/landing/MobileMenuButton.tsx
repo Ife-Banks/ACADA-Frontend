@@ -50,8 +50,7 @@ export function MobileMenuButton() {
             <a className="landing-mobile-link" href={href} key={href} onClick={closeMenu}>{label}</a>
           ))}
           <div className="landing-mobile-actions">
-            <Link className="landing-mobile-signin" href="/login" onClick={closeMenu}>Sign in</Link>
-            <Link className="landing-mobile-cta" href="/register" onClick={closeMenu}>Join your society <ArrowRight className="h-4 w-4" /></Link>
+            <Link className="landing-mobile-cta" href="/login" onClick={closeMenu}>Sign in <ArrowRight className="h-4 w-4" /></Link>
           </div>
       </nav>
     </div>

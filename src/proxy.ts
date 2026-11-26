@@ -23,7 +23,7 @@ import { ROLE_HOME, canRoleAccessPath } from "@/lib/roles";
  * re-checks the caller's role and permission server-side.
  */
 
-const PUBLIC_PATHS = ["/", "/login", "/register"];
+const PUBLIC_PATHS = ["/", "/login"];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

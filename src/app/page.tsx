@@ -203,7 +203,7 @@ export default function LandingPage() {
 
               <Reveal variant="fade-up" direction="center" once={false} delay={0.29}>
                 <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                  <LandingButton href="/register" variant="primary" cursorLabel="Join">Join your cooperative <ArrowRight className="h-4 w-4" /></LandingButton>
+                  <LandingButton href="/login" variant="primary" cursorLabel="Sign in">Sign in to your cooperative <ArrowRight className="h-4 w-4" /></LandingButton>
                   <LandingButton href="#workflow" variant="secondary" cursorLabel="View">See how it works</LandingButton>
                 </div>
               </Reveal>
@@ -306,7 +306,7 @@ export default function LandingPage() {
               <h2 className="landing-section-title text-left">Everyone sees what they need to do their part.</h2>
               <p className="landing-section-copy text-left">Members can follow their own finances. Officers can manage the work they are responsible for. Access is based on role and enforced by the platform.</p>
               <div className="landing-security-note"><ShieldCheck className="h-5 w-5 shrink-0" /><span>Member information stays within the right cooperative and role.</span></div>
-              <LandingButton href="/register" variant="primary" className="mt-7" cursorLabel="Join">Get started <ArrowRight className="h-4 w-4" /></LandingButton>
+              <LandingButton href="/login" variant="primary" className="mt-7" cursorLabel="Sign in">Sign in <ArrowRight className="h-4 w-4" /></LandingButton>
             </Reveal>
 
             <Reveal variant="clip-wipe" direction="right" once={false}>
@@ -340,8 +340,7 @@ export default function LandingPage() {
                   <h2>Make every contribution easier to follow.</h2>
                   <p>Join your society on ACADA and keep your cooperative’s records moving with the people who rely on them.</p>
                   <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                    <LandingButton href="/register" variant="light" cursorLabel="Join">Create your account <ArrowRight className="h-4 w-4" /></LandingButton>
-                    <Link href="/login" className="landing-cta-signin">Already have an account? <span>Sign in</span></Link>
+                    <LandingButton href="/login" variant="light" cursorLabel="Sign in">Sign in to your society <ArrowRight className="h-4 w-4" /></LandingButton>
                   </div>
                 </div>
                 <div className="landing-cta-mark" aria-hidden="true"><PiggyBank className="h-24 w-24" strokeWidth={1} /></div>
@@ -357,7 +356,7 @@ export default function LandingPage() {
           <div className="landing-container flex flex-col gap-5 py-7 sm:flex-row sm:items-center sm:justify-between">
             <LandingBrand footer />
             <p>Cooperative records, contributions, and schedules in one place.</p>
-            <div className="flex items-center gap-5"><Link href="/login">Sign in</Link><Link href="/register">Create account</Link></div>
+            <div className="flex items-center gap-5"><Link href="/login">Sign in</Link></div>
           </div>
         </Reveal>
       </footer>

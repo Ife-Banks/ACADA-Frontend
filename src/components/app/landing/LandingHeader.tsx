@@ -23,15 +23,14 @@ export function LandingHeader() {
           ))}
         </nav>
         <div className="flex items-center gap-3">
-          <Link className="landing-signin hidden md:inline-flex" href="/login">Sign in</Link>
           <Link
             ref={ref}
             className="landing-header-cta hidden md:inline-flex"
-            href="/register"
-            data-cursor="Join"
+            href="/login"
+            data-cursor="Sign in"
             {...handlers}
           >
-            <span className="landing-button-label">Join your society <ArrowUpRight className="h-4 w-4" /></span>
+            <span className="landing-button-label">Sign in <ArrowUpRight className="h-4 w-4" /></span>
           </Link>
           <MobileMenuButton />
         </div>

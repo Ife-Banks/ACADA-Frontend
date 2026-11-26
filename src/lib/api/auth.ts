@@ -1,5 +1,8 @@
 /**
- * Auth API — login, register, logout, refresh, me, password change.
+ * Auth API — login, logout, refresh, me, password change.
+ *
+ * There is no self-registration: members are onboarded by a society admin
+ * via POST /members/, which emails an invitation link.
  */
 
 import { api, setTokens, clearTokens } from "./client";
@@ -13,16 +16,6 @@ import type {
 export interface LoginPayload {
   email: string;
   password: string;
-  tenant_code?: string;
-}
-
-export interface RegisterPayload {
-  email: string;
-  first_name: string;
-  last_name: string;
-  phone?: string;
-  password: string;
-  password_confirm: string;
   tenant_code?: string;
 }
 
@@ -71,17 +64,6 @@ export async function login(payload: LoginPayload): Promise<LoginResponse> {
   }
 
   return { ...data, role };
-}
-
-/**
- * Register a new user. Optionally pass tenant_code for a pending membership.
- */
-export async function register(payload: RegisterPayload) {
-  return api.post<{ detail: string; user: { id: string; email: string; full_name: string } }>(
-    "/auth/register/",
-    payload,
-    { skipRefresh: true }
-  );
 }
 
 /**

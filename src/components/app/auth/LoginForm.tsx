@@ -5,7 +5,7 @@
  *
  * Fields: email, password (show/hide), tenant_code (optional — platform
  * admins leave it blank). Built from the shared auth kit so it stays
- * visually identical to RegisterForm and ChangePasswordForm.
+ * visually identical to ChangePasswordForm.
  *
  * Calls POST /api/v1/auth/login/ via the auth context, which redirects to
  * the role-appropriate portal on success.
