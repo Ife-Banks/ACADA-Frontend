@@ -8,6 +8,8 @@ import {
   CreditCard,
   Bell,
   UserCircle,
+  Share2,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RollLabel } from "@/components/motion/RollLabel";
@@ -19,8 +21,10 @@ import { PortalMobileNav } from "./PortalMobileNav";
 const NAV = [
   { label: "Dashboard",     href: "/member/dashboard",     icon: LayoutDashboard },
   { label: "Contributions", href: "/member/contributions", icon: PiggyBank },
+  { label: "My Shares",     href: "/member/shares",        icon: Share2 },
   { label: "Loans",         href: "/member/loans",         icon: CreditCard },
   { label: "Notifications", href: "/member/notifications", icon: Bell },
+  { label: "Exit",          href: "/member/exit",          icon: LogOut },
   { label: "My Profile",    href: "/member/profile",       icon: UserCircle },
 ];
 

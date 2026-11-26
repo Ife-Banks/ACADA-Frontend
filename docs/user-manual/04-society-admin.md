@@ -12,8 +12,8 @@ Your portal is the **president portal**: a wider sidebar with two groups.
 
 | Group | Items |
 |---|---|
-| **Society Admin** | Members · Loan Products · Contribution Plans · Settings |
-| **Executive** | Dashboard · Cycles · Schedules · Loan Applications · Financial Ledger |
+| **Society Admin** | Members · Loan Products · Contribution Plans · Agreements · Settings |
+| **Executive** | Dashboard · Cycles · Share Capital · Dividends · Exit Requests · Schedules · Loan Applications · Financial Ledger |
 
 You also keep `/member/*` — you are a member of your own society, with your
 own contributions, your own loans and your own guarantee requests.
@@ -95,12 +95,15 @@ Search is **server-side** and matches name, email, **employee number** and
 This creates an **active** membership and the member's profile record, and marks
 you as the approver.
 
-> **Known limitation.** The new account is created with a randomly generated
-> temporary password, but the welcome email that is meant to carry it is still
-> a `TODO` in the backend — nothing is sent. Until that is wired up, a member
-> created this way cannot sign in until their password is set another way.
-> Self-registration (`/register`) + **Approve** does not have this problem,
-> because the member chooses their own password at registration.
+The new account is created with a randomly generated temporary password, and an
+invitation email is sent containing:
+
+- The temporary password
+- A one-time link to set a permanent password (expires in 24 hours)
+
+The member must use the one-time link to set their permanent password before
+they can sign in. Self-registration (`/register`) + **Approve** is an
+alternative flow where the member chooses their own password at registration.
 
 ### 3.3 A member's detail — `/admin/members/{id}`
 
@@ -206,9 +209,16 @@ application form.
 |---|:--:|---|
 | Product name | ✅ | e.g. *Staff Salary Advance* |
 | Description | | What it is for |
+| Min amount (₦) | | Optional floor for loan requests |
 | Max amount (₦) | ✅ | The ceiling |
-| **Interest rate (%)** | ✅ | The annual percentage |
+| Interest rate (%) | ✅ | The rate — annual, monthly, or per-term depending on rate period |
 | **Interest basis** | ✅ | **Flat** or **Reducing balance** |
+| **Rate period** | ✅ | **Annual**, **Monthly**, or **Per loan term** |
+| **Contribution base** | ✅ | **All-time** or **Look-back** (last N months) |
+| Lookback months | | Only if contribution base is look-back |
+| Min contribution count | | Minimum number of contributions required |
+| Min contribution % | | Minimum percentage of contributions paid |
+| Required share units | | Share units required for eligibility |
 | Min term (months) | ✅ | |
 | Max term (months) | ✅ | Capped by the society's `max_term_months` |
 | Guarantors required | ✅ | |

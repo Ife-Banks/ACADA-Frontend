@@ -9,6 +9,10 @@ import {
   CreditCard,
   BookOpen,
   PiggyBank,
+  Share2,
+  Coins,
+  LogOut,
+  FileSignature,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -40,6 +44,10 @@ const NAV: NavItem[] = [
   // plans are society configuration, so only the society admin opens them.
   { label: "Financial Ledger",  href: "/executive/ledger",     icon: BookOpen,       roles: OFFICER },
   { label: "Loan Applications", href: "/executive/loans",      icon: CreditCard,     roles: OFFICER },
+  { label: "Share Capital",     href: "/executive/shares",     icon: Share2,         roles: EXECUTIVE },
+  { label: "Dividends",         href: "/executive/dividends",  icon: Coins,          roles: EXECUTIVE },
+  { label: "Exit Requests",     href: "/executive/exit-requests", icon: LogOut,       roles: EXECUTIVE },
+  { label: "Agreements",        href: "/executive/agreements", icon: FileSignature,  roles: ["SOCIETY_ADMIN"] },
   { label: "Schedules",         href: "/executive/schedules",  icon: FileText,       roles: EXECUTIVE },
   { label: "Contribution Plans", href: "/executive/plans",     icon: PiggyBank,      roles: ["SOCIETY_ADMIN"] },
 ];

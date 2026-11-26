@@ -89,7 +89,7 @@ export function AddMemberSheet({ open, onClose }: Props) {
       open={open}
       onClose={handleClose}
       title="Add New Member"
-      description="Creates an active membership. The member will receive a welcome email with instructions to set their password."
+      description="Creates an active membership. The member will receive an invitation email with a temporary password and a one-time link to set their permanent password."
       footer={
         <NmSubmitButton
           form="add-member-form"
@@ -210,10 +210,10 @@ export function AddMemberSheet({ open, onClose }: Props) {
         >
           <span className="text-brand-primary mt-0.5 shrink-0 text-sm">ℹ</span>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            A welcome email will be sent with instructions for the member to
-            set their password. The membership is created{" "}
-            <span className="font-semibold text-foreground">active</span> —
-            they can sign in as soon as they have their password.
+            An invitation email will be sent with a temporary password and a
+            one-time link to set a permanent password. The membership is
+            created <span className="font-semibold text-foreground">active</span> —
+            they can sign in once they've set their permanent password.
           </p>
         </div>
       </form>

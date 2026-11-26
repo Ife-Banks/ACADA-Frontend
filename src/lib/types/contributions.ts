@@ -1,10 +1,18 @@
 /**
- * Contribution domain types — plans, cycles, entries, penalties, ledger.
+ * Contribution domain types — plans, cycles, entries, penalties, ledger,
+ * shares, dividends, agreements, and exit requests.
  */
 
 export type CycleStatus = "open" | "processing" | "closed";
 export type EntryType = "regular" | "extra" | "adjustment";
-export type EntryStatus = "pending" | "confirmed" | "missed" | "partial";
+export type EntryStatus =
+  | "pending"
+  | "confirmed"
+  | "missed"
+  | "partial"
+  | "late"
+  | "reversed"
+  | "adjusted";
 export type PenaltyType = "late_payment" | "missed_payment" | "other";
 export type PenaltyStatus = "pending" | "applied" | "waived";
 export type LedgerEventType =
@@ -26,6 +34,15 @@ export interface ContributionPlan {
   effective_to: string | null;
   description: string;
   is_active: boolean;
+  // New fields
+  minimum_amount: string | null;
+  qualifying_membership_months: number | null;
+  qualifying_periods: number | null;
+  minimum_paid_periods: number | null;
+  minimum_paid_percentage: string | null;
+  grace_period_days: number;
+  withdrawal_policy: string;
+  policy_version: number;
   created_at: string;
   updated_at: string;
 }
@@ -59,6 +76,10 @@ export interface ContributionEntry {
   amount_received: string;
   source_reference: string;
   status: EntryStatus;
+  // New fields
+  contribution_agreement: string | null;
+  policy_version: number;
+  rule_snapshot: Record<string, unknown>;
   confirmed_by: string | null;
   /** Display name of the officer who confirmed the entry (null if unknown). */
   confirmed_by_name: string | null;
@@ -98,9 +119,170 @@ export interface FinancialLedgerEntry {
 /** Response from GET /contributions/my/balance/ */
 export interface MemberBalance {
   current_balance: string;
+  compulsory_balance?: string;
   total_cycles: number;
   total_due: string;
   total_received: string;
   confirmed_count: number;
   missed_count: number;
+}
+
+/** Response from GET /contributions/my/summary/ */
+export interface MemberContributionSummary extends MemberBalance {
+  required_amount: string | null;
+  frequency: string;
+  qualifying_periods: number | null;
+  minimum_paid_periods: number | null;
+  minimum_paid_percentage: string | null;
+  consecutive_paid_periods: number;
+  restricted_during_active_membership: boolean;
+}
+
+// ─── Share Capital ────────────────────────────────────────────────────────────
+
+export type ShareOwnershipModel = "unitary" | "multi";
+export type ShareholdingStatus = "subscribed" | "part_paid" | "paid" | "cancelled";
+
+export interface ShareProduct {
+  id: string;
+  name: string;
+  code: string;
+  description: string;
+  price_per_unit: string;
+  ownership_model: ShareOwnershipModel;
+  min_units: number;
+  max_units: number | null;
+  authorized_units: number | null;
+  issued_units: number;
+  version: number;
+  effective_from: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Shareholding {
+  id: string;
+  product: string;
+  member_profile: string;
+  units: number;
+  units_paid: number;
+  amount_paid: string;
+  unit_price: string;
+  status: ShareholdingStatus;
+  certificate_reference: string;
+  issued_at: string | null;
+  created_at: string;
+  // Joined fields (when available)
+  product_name?: string;
+  member_name?: string;
+}
+
+export interface ShareTransaction {
+  id: string;
+  holding: string;
+  event: "subscription" | "payment" | "issue" | "dividend" | "reversal";
+  units: number;
+  amount: string;
+  reference: string;
+  actor: string;
+  note: string;
+  created_at: string;
+}
+
+// ─── Dividends ────────────────────────────────────────────────────────────────
+
+export type DividendStatus = "proposed" | "approved" | "cancelled";
+export type DividendEntitlementStatus =
+  | "proposed"
+  | "payable"
+  | "paid"
+  | "withheld"
+  | "reinvested"
+  | "cancelled";
+
+export interface DividendDeclaration {
+  id: string;
+  financial_year: string;
+  record_date: string;
+  per_share_amount: string;
+  status: DividendStatus;
+  agm_reference: string;
+  proposed_by: string;
+  approved_by: string | null;
+  approved_at: string | null;
+  created_at: string;
+}
+
+export interface DividendEntitlement {
+  id: string;
+  declaration: string;
+  member_profile: string;
+  member_name: string;
+  eligible_units: number;
+  amount: string;
+  status: DividendEntitlementStatus;
+  payment_reference: string;
+}
+
+export interface DividendEligibilityPreview {
+  record_date: string;
+  per_share_amount: string;
+  members: Array<{
+    member_profile: string;
+    member_name: string;
+    paid_units: number;
+    amount: string;
+  }>;
+  total_amount: string;
+}
+
+// ─── Contribution Agreements ──────────────────────────────────────────────────
+
+export interface MemberContributionAgreement {
+  id: string;
+  member_profile: string;
+  plan: string;
+  amount: string;
+  effective_from: string;
+  effective_to: string | null;
+  reason: string;
+  policy_version: number;
+  approved_by: string;
+  approved_by_name: string;
+  created_at: string;
+}
+
+// ─── Exit Requests ────────────────────────────────────────────────────────────
+
+export type ExitRequestStatus =
+  | "submitted"
+  | "in_review"
+  | "approved"
+  | "rejected"
+  | "settled";
+
+export interface ExitRequest {
+  id: string;
+  member_profile: string;
+  requested_exit_date: string;
+  reason: string;
+  status: ExitRequestStatus;
+  gross_contribution_balance: string | null;
+  deductions: Array<{ label: string; amount: string }>;
+  proposed_payable: string | null;
+  decision_by: string | null;
+  decision_reason: string;
+  decided_at: string | null;
+  policy_version: number;
+  payment_reference: string;
+  created_at: string;
+}
+
+export interface ExitEstimate {
+  gross_compulsory_contributions: string;
+  proposed_deductions: Array<{ label: string; amount: string }>;
+  proposed_payable: string | null;
+  status: string;
+  note: string;
 }

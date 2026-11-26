@@ -53,6 +53,10 @@ Navigation:
 | **Cycles** | `/executive/cycles` |
 | **Financial Ledger** | `/executive/ledger` |
 | **Loan Applications** | `/executive/loans` |
+| **Share Capital** | `/executive/shares` |
+| **Dividends** | `/executive/dividends` |
+| **Exit Requests** | `/executive/exit-requests` |
+| **Agreements** | `/executive/agreements` |
 | **Schedules** | `/executive/schedules` |
 
 ### 3.1 Dashboard — `/executive/dashboard`
@@ -183,7 +187,45 @@ moment** — and generates the instalment schedule. The applicant is notified.
 > will fail with a server error. That is a known issue — see
 > [Known limitations](#6-known-limitations).
 
-### 3.6 Schedules — `/executive/schedules`
+### 3.6 Share Capital — `/executive/shares`
+
+Manage member share subscriptions and payments.
+
+- **Stats** — total invested, total holdings, fully paid count.
+- **Table** — every shareholding: member, product, units, paid units, amount paid, status, certificate reference.
+- **Actions** — **New Subscription** to subscribe a member on their behalf; **Record payment** on any active holding.
+
+Share payments are recorded with an optional reference. Only fully paid units count toward loan eligibility.
+
+### 3.7 Dividends — `/executive/dividends`
+
+Two sections: declarations and entitlements.
+
+**Declarations** — every dividend declaration: financial year, record date, per-share amount, status (`proposed`, `approved`, `cancelled`), AGM reference.
+- **New Declaration** — create a proposed declaration with record date and per-share amount.
+- **Approve** — record the AGM reference to make entitlements payable.
+
+**Entitlements** — every member's dividend entitlement: member, declaration, eligible units, amount, status (`proposed`, `payable`, `paid`, `withheld`, `reinvested`), payment reference.
+- **Record payment** — mark as `paid`, `withheld`, or `reinvested` with optional reference.
+
+> Dividend status changes are records only — no funds move automatically.
+
+### 3.8 Exit Requests — `/executive/exit-requests`
+
+Review and process member exit requests.
+
+- **Table** — every request: member, exit date, reason, proposed payable, status.
+- **Review** — approve or reject with settlement details (gross balance, deductions, proposed payable).
+- **Mark settled** — record the payment reference after external settlement.
+
+### 3.9 Agreements — `/executive/agreements`
+
+Member-specific contribution agreements (society-admin only).
+
+- **Table** — every agreement: member, plan, custom amount, effective dates, reason, approved by.
+- **New Agreement** — set a custom contribution amount for a specific member.
+
+### 3.10 Schedules — `/executive/schedules`
 
 This screen is `EXECUTIVE`-only. A committee member who types the URL gets
 *"Executive access required."*

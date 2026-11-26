@@ -27,6 +27,12 @@ export type RepaymentStatus = "scheduled" | "paid" | "partial" | "overdue" | "wa
  */
 export type InterestMethod = "flat" | "reducing";
 
+/** How often the interest rate is applied. */
+export type RatePeriod = "annual" | "monthly" | "term";
+
+/** What base the loan eligibility calculation uses. */
+export type ContributionBase = "all_time" | "lookback";
+
 export const INTEREST_METHODS: {
   value: InterestMethod;
   label: string;
@@ -44,6 +50,45 @@ export const INTEREST_METHODS: {
   },
 ];
 
+export const RATE_PERIODS: {
+  value: RatePeriod;
+  label: string;
+  hint: string;
+}[] = [
+  {
+    value: "annual",
+    label: "Annual rate",
+    hint: "Interest rate is per annum (e.g., 5% per year)",
+  },
+  {
+    value: "monthly",
+    label: "Monthly rate",
+    hint: "Interest rate is per month (e.g., 0.5% per month)",
+  },
+  {
+    value: "term",
+    label: "Per loan term",
+    hint: "Interest rate applies to the entire loan term (e.g., 5% for the whole loan)",
+  },
+];
+
+export const CONTRIBUTION_BASES: {
+  value: ContributionBase;
+  label: string;
+  hint: string;
+}[] = [
+  {
+    value: "all_time",
+    label: "All-time contributions",
+    hint: "Use all confirmed contributions for eligibility calculation",
+  },
+  {
+    value: "lookback",
+    label: "Look-back period",
+    hint: "Use only contributions from the last N months",
+  },
+];
+
 export interface LoanProduct {
   id: string;
   name: string;
@@ -51,14 +96,26 @@ export interface LoanProduct {
   min_membership_months: number;
   min_contribution_months: number;
   guarantor_required_count: number;
-  max_amount: string;
+  // Amount rules
+  min_amount: string | null;
+  max_amount: string | null;
   max_multiplier: string;
+  // Interest and terms
   interest_rate: string;
   interest_method: InterestMethod;
+  rate_period: RatePeriod;
+  contribution_base: ContributionBase;
+  contribution_lookback_months: number | null;
+  minimum_contribution_count: number | null;
+  minimum_contribution_percentage: string | null;
+  required_share_units: number;
   max_term_months: number;
   min_term_months: number;
+  // Approval rules
   auto_approval_threshold: string;
   is_active: boolean;
+  version: number;
+  previous_version: string | null;
   created_at: string;
 }
 
@@ -120,6 +177,10 @@ export interface QuoteInstallment {
 export interface RepaymentQuote {
   principal: string;
   annual_rate: string;
+  /** The configured interest rate as entered (may differ from annual_rate if rate_period is not annual) */
+  interest_rate: string;
+  /** How often the configured rate applies */
+  rate_period: RatePeriod;
   term_months: number;
   interest_method: InterestMethod;
   interest_method_label: string;
@@ -127,6 +188,44 @@ export interface RepaymentQuote {
   total_repayable: string;
   monthly_installment: string;
   schedule: QuoteInstallment[];
+}
+
+/** Terms snapshot stored on loan applications */
+export interface LoanTermsSnapshot {
+  product_id: string;
+  product_version: number;
+  name: string;
+  min_membership_months: number;
+  min_contribution_months: number;
+  guarantor_required_count: number;
+  min_amount: string | null;
+  max_amount: string | null;
+  max_multiplier: string;
+  interest_rate: string;
+  rate_period: RatePeriod;
+  interest_method: InterestMethod;
+  min_term_months: number;
+  max_term_months: number;
+  required_share_units: number;
+  contribution_base: ContributionBase;
+  contribution_lookback_months: number | null;
+}
+
+/** Calculation snapshot stored on approved loans */
+export interface LoanCalculationSnapshot {
+  principal: string;
+  annual_rate: string;
+  interest_rate: string;
+  rate_period: RatePeriod;
+  term_months: number;
+  interest_method: InterestMethod;
+  total_interest: string;
+  total_repayable: string;
+  monthly_installment: string;
+  schedule: QuoteInstallment[];
+  qualifying_contribution_base?: string;
+  qualifying_contribution_amount?: string;
+  max_multiplier?: string;
 }
 
 export interface LoanApplicationSummary {
@@ -154,6 +253,7 @@ export interface LoanApplicationDetail {
   rule_evaluation: RuleEvaluation | null;
   evaluated_at: string | null;
   rejection_reason: string;
+  terms_snapshot: LoanTermsSnapshot | null;
   submitted_at: string | null;
   guarantors: LoanGuarantor[];
   approval_steps: LoanApprovalStep[];
@@ -209,6 +309,7 @@ export interface ActiveLoan {
   total_paid: string;
   outstanding_balance: string;
   disbursement_mode: string;
+  calculation_snapshot: LoanCalculationSnapshot | null;
   opened_at: string;
   closed_at: string | null;
   repayment_schedule: RepaymentScheduleItem[];

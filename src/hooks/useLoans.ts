@@ -19,6 +19,8 @@ import {
   getActiveLoans,
   getActiveLoan,
   getLoanQuote,
+  getProductEligibility,
+  getProductEstimate,
 } from "@/lib/api/loans";
 import { qk } from "@/lib/query-keys";
 
@@ -165,5 +167,68 @@ export function useActiveLoan(id: string) {
     enabled: !!id,
     staleTime: THIRTY_SEC,
     refetchOnWindowFocus: true,
+  });
+}
+
+// ─── Product-scoped eligibility & estimate ────────────────────────────────────
+
+/**
+ * Eligibility check scoped to a specific product.
+ * Returns the full rule evaluation including max_borrowable.
+ */
+export function useProductEligibility(
+  productId: string,
+  amount?: string,
+  termMonths?: number,
+  enabled = true
+) {
+  const amountValue = amount ? Number(amount) : undefined;
+  const ready =
+    enabled &&
+    !!productId &&
+    (amountValue === undefined || (amountValue > 0 && Number.isFinite(amountValue)));
+
+  return useQuery({
+    queryKey: qk.loans.productEligibility(productId, amount, termMonths),
+    queryFn: () =>
+      getProductEligibility(productId, {
+        amount: amount ?? undefined,
+        term_months: termMonths,
+      }),
+    enabled: ready,
+    staleTime: 30_000,
+    retry: false,
+  });
+}
+
+/**
+ * Repayment estimate scoped to a specific product.
+ * Uses POST /loans/products/{id}/estimate/ for product-level pricing.
+ */
+export function useProductEstimate(
+  productId: string,
+  amount: string,
+  termMonths: number,
+  enabled = true
+) {
+  const amountValue = Number(amount);
+  const ready =
+    enabled &&
+    !!productId &&
+    amountValue > 0 &&
+    Number.isFinite(amountValue) &&
+    Number.isInteger(termMonths) &&
+    termMonths > 0;
+
+  return useQuery({
+    queryKey: qk.loans.productEstimate(productId, amount, termMonths),
+    queryFn: () =>
+      getProductEstimate(productId, {
+        amount,
+        term_months: termMonths,
+      }),
+    enabled: ready,
+    staleTime: 60_000,
+    retry: false,
   });
 }

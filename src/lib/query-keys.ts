@@ -43,6 +43,7 @@ export const qk = {
     list: (page = 1, pageSize = 25) =>
       [ROOT, "contributions", "list", { page, pageSize }] as const,
     balance: [ROOT, "contributions", "balance"] as const,
+    summary: [ROOT, "contributions", "summary"] as const,
     plans: [ROOT, "contributions", "plans"] as const,
     allPlans: [ROOT, "contributions", "plans", "all"] as const,
     cycles: (page = 1, pageSize = 25) =>
@@ -61,6 +62,16 @@ export const qk = {
       [ROOT, "contributions", "cycles", cycleId, "penalties"] as const,
     ledger: (page = 1, pageSize = 25) =>
       [ROOT, "contributions", "ledger", { page, pageSize }] as const,
+    shareProducts: [ROOT, "contributions", "share-products"] as const,
+    allShareProducts: [ROOT, "contributions", "share-products", "all"] as const,
+    shareholdings: [ROOT, "contributions", "shareholdings"] as const,
+    myShareholdings: [ROOT, "contributions", "shareholdings", "mine"] as const,
+    dividendDeclarations: [ROOT, "contributions", "dividend-declarations"] as const,
+    dividendEntitlements: [ROOT, "contributions", "dividend-entitlements"] as const,
+    contributionAgreements: [ROOT, "contributions", "agreements"] as const,
+    exitRequests: [ROOT, "contributions", "exit-requests"] as const,
+    myExitRequests: [ROOT, "contributions", "exit-requests", "mine"] as const,
+    exitEstimate: [ROOT, "contributions", "exit-requests", "estimate"] as const,
   },
 
   loans: {
@@ -79,6 +90,10 @@ export const qk = {
     activeDetail: (id: string) => [ROOT, "loans", "active", id] as const,
     quote: (productId: string, amount: string, term: string) =>
       [ROOT, "loans", "quote", { productId, amount, term }] as const,
+    productEligibility: (productId: string, amount?: string, term?: number) =>
+      [ROOT, "loans", "products", productId, "eligibility", { amount, term }] as const,
+    productEstimate: (productId: string, amount: string, term: number) =>
+      [ROOT, "loans", "products", productId, "estimate", { amount, term }] as const,
   },
 
   schedules: {

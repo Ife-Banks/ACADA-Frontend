@@ -56,6 +56,9 @@ const ENTRY_STYLES: Record<EntryStatus, string> = {
   confirmed: "bg-success/10 text-success",
   missed:    "bg-destructive/10 text-destructive",
   partial:   "bg-primary/10 text-brand-primary",
+  late:      "bg-orange-500/10 text-orange-600",
+  reversed:  "bg-muted text-muted-foreground",
+  adjusted:  "bg-purple-500/10 text-purple-600",
 };
 
 const ENTRY_LABEL: Record<EntryStatus, string> = {
@@ -63,6 +66,9 @@ const ENTRY_LABEL: Record<EntryStatus, string> = {
   confirmed: "Confirmed",
   missed:    "Missed",
   partial:   "Partial",
+  late:      "Late",
+  reversed:  "Reversed",
+  adjusted:  "Adjusted",
 };
 
 export function EntryStatusBadge({

@@ -46,8 +46,10 @@ Navigation (sidebar, or the mobile drawer under 1024px):
 |---|---|---|
 | **Dashboard** | `/member/dashboard` | Your position in the society at a glance |
 | **Contributions** | `/member/contributions` | What you owe, what you have paid, month by month |
+| **My Shares** | `/member/shares` | Your share subscriptions and dividend entitlements |
 | **Loans** | `/member/loans` | Active loans, applications and guarantee requests |
 | **Notifications** | `/member/notifications` | Everything the society has sent you |
+| **Exit** | `/member/exit` | Request to leave the cooperative |
 | **My Profile** | `/member/profile` | Your account and membership details |
 
 ### 3.1 Dashboard — `/member/dashboard`
@@ -81,7 +83,17 @@ Statuses you will see: `pending`, `confirmed`, `missed`, `partial`.
 > treasurer confirms what the bursary actually remitted. Your entry moves to
 > `confirmed` when that happens.
 
-### 3.3 Loans — `/member/loans`
+### 3.3 My Shares — `/member/shares`
+
+Your share capital position.
+
+- **Summary tiles** — Total invested, total units, active holdings, and a subscribe button.
+- **Shareholdings table** — every share subscription: product, units, paid units, amount paid, status (`subscribed`, `part_paid`, `paid`, `cancelled`), certificate reference, and subscription date.
+- **Dividend entitlements** — your share of declared dividends: declaration, eligible units, amount, status (`proposed`, `payable`, `paid`, `withheld`, `reinvested`), and payment reference.
+
+**Subscribe to shares:** Press **Subscribe to Shares** to choose a product and specify units. The form shows the unit price, minimum/maximum units, and calculates your total investment. Only fully paid units count toward loan eligibility.
+
+### 3.4 Loans — `/member/loans`
 
 Three tabs.
 
@@ -112,7 +124,7 @@ submitted, and the list of approval steps.
 Applications where **you were named as a guarantor**. See
 [section 5](#5-guarantee-requests) below.
 
-### 3.4 Notifications — `/member/notifications`
+### 3.5 Notifications — `/member/notifications`
 
 - Tabs: **All** and **Unread** (with a count).
 - **Mark all read** in the header, or **Mark read** on an individual card.
@@ -125,10 +137,20 @@ Applications where **you were named as a guarantor**. See
 Guarantee notifications carry a **Review guarantee request** button that opens
 the confirm dialog without you having to hunt for the request.
 
-### 3.5 My Profile — `/member/profile`
+### 3.6 My Profile — `/member/profile`
 
 Your account summary: email, phone, account type, member-since date, last
 sign-in, and your membership status. You can **change your password** here.
+
+### 3.7 Exit — `/member/exit`
+
+Request to leave the cooperative.
+
+- **Settlement estimate** — shows your gross contribution balance, proposed deductions (loans, penalties), and estimated payable amount.
+- **Submit exit request** — choose an exit date and provide a reason.
+- **Request status** — track your requests: `submitted`, `in_review`, `approved`, `rejected`, `settled`.
+
+> Once approved, the society records the payment reference. Funds are not transferred automatically — the bursary processes settlement externally.
 
 ---
 

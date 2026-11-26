@@ -121,7 +121,7 @@ function ProductRow({
           </span>
         </td>
         <td className="py-3.5 pr-4 text-sm text-foreground whitespace-nowrap">
-          {money(product.max_amount)}
+          {product.max_amount ? money(product.max_amount) : "—"}
         </td>
         <td className="py-3.5 pr-4 text-sm text-foreground whitespace-nowrap">
           {product.min_term_months}–{product.max_term_months} mo

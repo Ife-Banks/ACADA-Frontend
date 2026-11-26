@@ -60,6 +60,17 @@ export async function checkEligibility(payload: EligibilityCheckPayload) {
 }
 
 /**
+ * Product-scoped eligibility check — GET endpoint.
+ * Returns the same result as POST /eligibility/ but scoped to a product.
+ */
+export async function getProductEligibility(
+  productId: string,
+  params?: { amount?: string; term_months?: number }
+) {
+  return api.get<RuleEvaluation>(`/loans/products/${productId}/eligibility/`, params);
+}
+
+/**
  * Price a loan before applying.
  *
  * The backend runs the same calculator it uses to write the contract, so
@@ -68,6 +79,17 @@ export async function checkEligibility(payload: EligibilityCheckPayload) {
  */
 export async function getLoanQuote(payload: LoanQuotePayload) {
   return api.post<RepaymentQuote>("/loans/quote/", payload);
+}
+
+/**
+ * Product-scoped estimate — POST endpoint.
+ * Same as getLoanQuote but scoped to a specific product.
+ */
+export async function getProductEstimate(
+  productId: string,
+  payload: { amount: string; term_months: number }
+) {
+  return api.post<RepaymentQuote>(`/loans/products/${productId}/estimate/`, payload);
 }
 
 // ─── Applications ─────────────────────────────────────────────────────────────

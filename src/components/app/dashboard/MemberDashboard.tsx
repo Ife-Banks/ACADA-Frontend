@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { useMyBalance } from "@/hooks/useContributions";
+import { useMyContributionSummary } from "@/hooks/useContributions";
 import { useActiveLoans } from "@/hooks/useLoans";
 import { useNotifications } from "@/hooks/useNotifications";
 import { LoanStatusBadge } from "@/components/app/loans/LoanBadges";
@@ -120,7 +120,7 @@ function NotificationRow({ n }: { n: Notification }) {
 
 export function MemberDashboard() {
   const { data: me } = useCurrentUser();
-  const { data: balance, isLoading: balanceLoading, error: balanceError, refetch: refetchBalance } = useMyBalance();
+  const { data: summary, isLoading: balanceLoading, error: balanceError, refetch: refetchBalance } = useMyContributionSummary();
   const { data: loansData, isLoading: loansLoading } = useActiveLoans(1, 3);
   const { notifications, isLoading: notificationsLoading } = useNotifications();
 
@@ -131,6 +131,21 @@ export function MemberDashboard() {
   const activeLoans = loansData?.results ?? [];
   const outstanding = activeLoans.reduce((s, l) => s + Number(l.outstanding_balance), 0);
   const unread = notifications.filter((n) => !n.is_read).length;
+
+  // Use summary data with fallback to balance fields
+  const balance = summary ? {
+    current_balance: summary.current_balance,
+    total_received: summary.total_received,
+    total_due: summary.total_due,
+    total_cycles: summary.total_cycles,
+    confirmed_count: summary.confirmed_count,
+    missed_count: summary.missed_count,
+  } : null;
+
+  const consecutivePaid = summary?.consecutive_paid_periods ?? 0;
+  const restricted = summary?.restricted_during_active_membership ?? false;
+  const requiredAmount = summary?.required_amount;
+  const frequency = summary?.frequency;
 
   return (
     <div className="member-page member-dashboard-page flex flex-col gap-5">
@@ -214,6 +229,20 @@ export function MemberDashboard() {
                       }}
                     />
                   </div>
+                  {summary && summary.qualifying_periods && (
+                    <div className="mt-3 flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">Consecutive paid periods</span>
+                      <span className="font-semibold text-foreground">
+                        {consecutivePaid} / {summary.qualifying_periods}
+                      </span>
+                    </div>
+                  )}
+                  {restricted && (
+                    <div className="mt-2 flex items-center gap-2 text-xs text-yellow-600">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      <span>Withdrawal restricted during active membership</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -241,7 +270,12 @@ export function MemberDashboard() {
           hint={balance?.missed_count ? `${balance.missed_count} missed` : "No missed entries"}
           index={2}
         />
-        <StatTile label="Total due" value={balance ? money(balance.total_due) : "—"} index={3} />
+        <StatTile
+          label="Consecutive paid"
+          value={summary ? `${consecutivePaid}${summary.qualifying_periods ? `/${summary.qualifying_periods}` : ""}` : "—"}
+          hint={requiredAmount ? `Required: ${money(requiredAmount)}` : frequency ? `Frequency: ${frequency}` : undefined}
+          index={3}
+        />
       </div>
 
       {/* Loan snapshot + notifications */}

@@ -40,6 +40,7 @@ import { cn } from "@/lib/utils";
 const schema = z.object({
   loan_product_id: z.string().min(1, "Select a loan product"),
   amount: z.string().optional(),
+  term_months: z.string().optional(),
 });
 type FormValues = z.infer<typeof schema>;
 
@@ -113,6 +114,7 @@ export function LoanEligibilitySheet({ open, onClose, onApply }: Props) {
     mutate({
       loan_product_id: values.loan_product_id,
       amount: values.amount || undefined,
+      term_months: values.term_months ? parseInt(values.term_months, 10) : undefined,
     });
   }
 
@@ -163,6 +165,19 @@ export function LoanEligibilitySheet({ open, onClose, onApply }: Props) {
               placeholder="e.g. 500000"
               min={0}
               {...register("amount")}
+            />
+          </NmField>
+
+          <NmField
+            label="Term (months, optional)"
+            hint="Include to see repayment quote"
+            error={errors.term_months?.message}
+          >
+            <NmInput
+              type="number"
+              placeholder="e.g. 12"
+              min={1}
+              {...register("term_months")}
             />
           </NmField>
 
@@ -223,6 +238,41 @@ export function LoanEligibilitySheet({ open, onClose, onApply }: Props) {
                 </p>
               )}
             </div>
+
+            {/* Repayment quote (if term was provided) */}
+            {result.quote && (
+              <div className="nm-raised rounded-2xl p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+                  Repayment estimate
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-[10px] text-muted-foreground">Monthly installment</p>
+                    <p className="text-lg font-bold text-foreground">
+                      ₦{Number(result.quote.monthly_installment).toLocaleString("en-NG")}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-muted-foreground">Total repayable</p>
+                    <p className="text-lg font-bold text-foreground">
+                      ₦{Number(result.quote.total_repayable).toLocaleString("en-NG")}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-muted-foreground">Total interest</p>
+                    <p className="text-sm font-semibold text-foreground">
+                      ₦{Number(result.quote.total_interest).toLocaleString("en-NG")}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-muted-foreground">Interest rate</p>
+                    <p className="text-sm font-semibold text-foreground">
+                      {result.quote.interest_rate}% ({result.quote.rate_period})
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Per-rule breakdown */}
             <div className="flex flex-col gap-2">

@@ -17,6 +17,7 @@ import { NmField, NmInput, NmSelect, NmTextarea, NmErrorBanner } from "@/compone
 import { createLoanProduct, updateLoanProduct } from "@/lib/api/loans";
 import { qk } from "@/lib/query-keys";
 import { ApiError } from "@/lib/api/client";
+import { RATE_PERIODS, CONTRIBUTION_BASES } from "@/lib/types/loans";
 import type { LoanProduct } from "@/lib/types";
 
 const schema = z.object({
@@ -24,6 +25,7 @@ const schema = z.object({
   // Description is optional on the backend, so legacy products with a blank
   // description remain editable.
   description: z.string().trim(),
+  min_amount: z.string().optional(),
   max_amount: z
     .string()
     .min(1, "Enter the maximum amount")
@@ -35,6 +37,16 @@ const schema = z.object({
   interest_method: z.enum(["flat", "reducing"] as const, {
     error: "Choose how the interest is charged",
   }),
+  rate_period: z.enum(["annual", "monthly", "term"] as const, {
+    error: "Choose the rate period",
+  }),
+  contribution_base: z.enum(["all_time", "lookback"] as const, {
+    error: "Choose the contribution base",
+  }),
+  contribution_lookback_months: z.string().optional(),
+  minimum_contribution_count: z.string().optional(),
+  minimum_contribution_percentage: z.string().optional(),
+  required_share_units: z.string().optional(),
   min_term_months: z
     .string()
     .min(1, "Enter the minimum term")
@@ -81,6 +93,8 @@ export function CreateLoanProductDialog({ open, onClose, product }: Props) {
       max_multiplier: "3",
       auto_approval_threshold: "0",
       interest_method: "flat",
+      rate_period: "annual",
+      contribution_base: "all_time",
     },
   });
 
@@ -95,9 +109,16 @@ export function CreateLoanProductDialog({ open, onClose, product }: Props) {
     reset({
       name: product?.name ?? "",
       description: product?.description ?? "",
+      min_amount: product?.min_amount ?? "",
       max_amount: product?.max_amount ?? "",
       interest_rate: product?.interest_rate ?? "",
       interest_method: product?.interest_method ?? "flat",
+      rate_period: product?.rate_period ?? "annual",
+      contribution_base: product?.contribution_base ?? "all_time",
+      contribution_lookback_months: product?.contribution_lookback_months?.toString() ?? "",
+      minimum_contribution_count: product?.minimum_contribution_count?.toString() ?? "",
+      minimum_contribution_percentage: product?.minimum_contribution_percentage ?? "",
+      required_share_units: product?.required_share_units?.toString() ?? "",
       min_term_months: product ? String(product.min_term_months) : "",
       max_term_months: product ? String(product.max_term_months) : "",
       guarantor_required_count: product
@@ -148,10 +169,17 @@ export function CreateLoanProductDialog({ open, onClose, product }: Props) {
       min_membership_months: Number(values.min_membership_months),
       min_contribution_months: Number(values.min_contribution_months),
       guarantor_required_count: Number(values.guarantor_required_count),
+      min_amount: values.min_amount || null,
       max_amount: values.max_amount,
       max_multiplier: values.max_multiplier,
       interest_rate: values.interest_rate,
       interest_method: values.interest_method,
+      rate_period: values.rate_period,
+      contribution_base: values.contribution_base,
+      contribution_lookback_months: values.contribution_lookback_months ? Number(values.contribution_lookback_months) : null,
+      minimum_contribution_count: values.minimum_contribution_count ? Number(values.minimum_contribution_count) : null,
+      minimum_contribution_percentage: values.minimum_contribution_percentage || null,
+      required_share_units: values.required_share_units ? Number(values.required_share_units) : 0,
       max_term_months: Number(values.max_term_months),
       min_term_months: Number(values.min_term_months),
       auto_approval_threshold: values.auto_approval_threshold,
@@ -241,6 +269,106 @@ export function CreateLoanProductDialog({ open, onClose, product }: Props) {
             <option value="reducing">Reducing balance (amortised)</option>
           </NmSelect>
         </NmField>
+
+        <NmField
+          label="Rate period"
+          hint="How often the interest rate applies"
+          error={errors.rate_period?.message}
+          required
+        >
+          <NmSelect
+            error={!!errors.rate_period}
+            {...register("rate_period")}
+          >
+            {RATE_PERIODS.map((p) => (
+              <option key={p.value} value={p.value}>
+                {p.label}
+              </option>
+            ))}
+          </NmSelect>
+        </NmField>
+
+        <NmField
+          label="Contribution base"
+          hint="What contribution history to use for eligibility"
+          error={errors.contribution_base?.message}
+          required
+        >
+          <NmSelect
+            error={!!errors.contribution_base}
+            {...register("contribution_base")}
+          >
+            {CONTRIBUTION_BASES.map((b) => (
+              <option key={b.value} value={b.value}>
+                {b.label}
+              </option>
+            ))}
+          </NmSelect>
+        </NmField>
+
+        <div className="grid grid-cols-2 gap-3">
+          <NmField label="Min amount (₦)" error={errors.min_amount?.message}>
+            <NmInput
+              type="number"
+              placeholder="e.g. 50000"
+              min={0}
+              error={!!errors.min_amount}
+              {...register("min_amount")}
+            />
+          </NmField>
+          <NmField label="Max amount (₦)" error={errors.max_amount?.message} required>
+            <NmInput
+              type="number"
+              placeholder="e.g. 5000000"
+              min={0}
+              error={!!errors.max_amount}
+              {...register("max_amount")}
+            />
+          </NmField>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <NmField label="Lookback months" error={errors.contribution_lookback_months?.message}>
+            <NmInput
+              type="number"
+              placeholder="e.g. 12"
+              min={0}
+              error={!!errors.contribution_lookback_months}
+              {...register("contribution_lookback_months")}
+            />
+          </NmField>
+          <NmField label="Min contribution count" error={errors.minimum_contribution_count?.message}>
+            <NmInput
+              type="number"
+              placeholder="e.g. 6"
+              min={0}
+              error={!!errors.minimum_contribution_count}
+              {...register("minimum_contribution_count")}
+            />
+          </NmField>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <NmField label="Min contribution %" error={errors.minimum_contribution_percentage?.message}>
+            <NmInput
+              type="number"
+              placeholder="e.g. 80"
+              min={0}
+              max={100}
+              error={!!errors.minimum_contribution_percentage}
+              {...register("minimum_contribution_percentage")}
+            />
+          </NmField>
+          <NmField label="Required share units" error={errors.required_share_units?.message}>
+            <NmInput
+              type="number"
+              placeholder="e.g. 10"
+              min={0}
+              error={!!errors.required_share_units}
+              {...register("required_share_units")}
+            />
+          </NmField>
+        </div>
 
         <div className="grid grid-cols-2 gap-3">
           <NmField label="Min term (months)" error={errors.min_term_months?.message} required>
